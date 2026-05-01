@@ -1,25 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="/static/style.css">
+{{template "header" .}}
+<main class="container">
+    <h3 style="color: #666;">Catégories</h3>
+    
+    <div class="category-grid">
+        <a href="/categories/la-braise" class="category-card">
+            <div class="card-icon"></div>
+            <div class="card-content">
+                <h2 style="margin: 0; font-size: 18px;">La Braise</h2>
+                <p style="color: #999; font-size: 13px;">Discussions générales et blabla culinaire</p>
+                <span style="color: #666; font-size: 11px;">• Présentations • News • Divers</span>
+            </div>
+        </a>
 
-</head>
-<body>
-    {{template "header"}}
-    <main class="container">
-        <section class="hero">
-            <h1>Bienvenue sur Crak'Hot</h1>
-            <p>Le forum n°1 de la culture pimentée.</p>
-        </section>
-
-        <div class="category-card">
-            <h2>La Braise</h2>
-            <p>Discussion générales sur les piments.</p>
-        </div>
-    </main>
-    {{template "footer"}}
-</body>
-</html>
+        <a href="/categories/l-arsenal" class="category-card">
+            <div class="card-icon"></div>
+            <div class="card-content">
+                <h2 style="margin: 0; font-size: 18px;">L'Arsenal</h2>
+                <p style="color: #999; font-size: 13px;">Discussions générales et blabla culinaire</p>
+                <span style="color: #666; font-size: 11px;">• Présentations • News • Divers</span>
+            </div>
+        </a>
+    </div>
+</main>
+{{template "footer" .}}

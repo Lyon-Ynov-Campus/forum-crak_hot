@@ -1,25 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Connexion - Crak'Hot</title>
 </head>
-<body>
-    {{template "header"}}
-    <div class="auth-box">
-        <h2>Connexion</h2>
-        <form action="/login" method="POST">
-            <div class="form-group">
-                <label>E-mail</label>
-                <input type="email" name="email" required>
+<body class="auth-body">
+    <main class="auth-page">
+        <div class="brand-logo">
+            <img src="/assets/logo.png" alt="Crak'Hot">
+        </div>
+        
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <div class="tab active">Se connecter</div>
+                <a href="/register" class="tab inactive">S'inscrire</a>
             </div>
-            <div class="form-group">
-                <label>Mot de passe</label>
-                <input type="password" name="password" required>
-            </div>
-            <button type="submit" class="btn-primary">Se connecter</button>
-        </form>
-    </div>
-    {{template "footer"}}
+            
+            <form action="/login" method="POST" class="auth-form">
+                <div class="form-group">
+                    <label>Email/Pseudo :</label>
+                    <input type="text" name="identifier" placeholder="Votre identifiant" required>
+                </div>
+                <div class="form-group">
+                    <label>Password :</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-black">Connexion</button>
+            </form>
+        </div>
+    </main>
 </body>
 </html>

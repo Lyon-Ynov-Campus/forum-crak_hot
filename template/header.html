@@ -1,21 +1,32 @@
 {{ define "header"}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Crak'Hot Forum</title>
 </head>
 <body>
-    <header class="navbar">
-        <div class="logo">Crak'Hot</div>
-        <nav>
-        <a href="/">Accueil</a>
-        <a href="/login">Connexion</a>
-        <a href="/register">Inscription</a>
+    <div class="logo-hero-section">
+        <img src="/assets/logo.png" alt="Crak'Hot Logo" class="main-logo">
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="/" class="{{if eq . "home"}}active{{end}}">ACCUEIL</a>
+            <a href="/reseau">RESEAU</a>
+            <a href="/recherche">RECHERCHE</a>
+        </div>
+        
+        <div class="search-bar-container">
+            <input type="text" placeholder="Rechercher un sujet ou un piment..." class="search-input">
+            <i class="fa fa-search search-icon"></i>
+        </div>
+
+        <div class="auth-buttons">
+            <a href="/login" class="btn-login-text">Se connecter</a>
+            <a href="/register" class="btn-register">S'inscrire</a>
+        </div>
     </nav>
-    </header>
 {{end}}
-</body>
-</html>

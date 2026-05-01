@@ -9,16 +9,18 @@ func Server() {
 	http.HandleFunc("/", Home)
 	http.HandleFunc("/login", LoginPage)
 	http.HandleFunc("/register", RegisterPage)
-	http.HandleFunc("/", Home)
+	http.HandleFunc("/categories", CategoryHandler)
+
+	as := http.FileServer(http.Dir("assets"))
+	http.Handle("/assets/", http.StripPrefix("/assets/", as))
 
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	fmt.Println("Serveur lancé sur localhost 8080")
-	http.ListenAndServe(":8080", nil)
+	fmt.Println("Le serveur est lancé sur http://localhost:8080")
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		fmt.Println("Erreur serveur: %v\n", err)
+		fmt.Printf("Erreur serveur: %v\n", err)
 	}
 }
