@@ -1,6 +1,6 @@
 {{ define "header"}}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/static/style.css">
@@ -14,9 +14,9 @@
 
     <nav class="navbar">
         <div class="nav-links">
-            <a href="/" class="{{if eq . "home"}}active{{end}}">ACCUEIL</a>
-            <a href="/reseau">RESEAU</a>
-            <a href="/recherche">RECHERCHE</a>
+            <a href="/" class="{{if eq .Page "home"}}active{{end}}">ACCUEIL</a>
+            <a href="/reseau" class="{{if eq .Page "reseau"}}active{{end}}">RESEAU</a>
+            <a href="/recherche" class="{{if eq .Page "recherche"}}active{{end}}">RECHERCHE</a>
         </div>
         
         <div class="search-bar-container">

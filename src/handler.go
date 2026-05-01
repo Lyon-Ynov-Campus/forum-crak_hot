@@ -3,6 +3,7 @@ package forum
 import (
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 func Home(w http.ResponseWriter, r *http.Request) {
@@ -10,26 +11,47 @@ func Home(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-
-	tmpl, err := template.ParseFiles("index.html", "template/header.html", "template/footer.html")
+	data := struct{ Page string }{Page: "home"}
+	tmpl, err := template.ParseFiles("template/index.html", "template/header.html", "template/footer.html")
 	if err != nil {
-		http.Error(w, "Erreur template: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Erreur template Home: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, "home")
+	tmpl.Execute(w, data)
 }
 
 func LoginPage(w http.ResponseWriter, r *http.Request) {
-	tmpl, _ := template.ParseFiles("login.html")
+	tmpl, err := template.ParseFiles("template/login.html", "template/header.html", "template/footer.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	tmpl.Execute(w, nil)
 }
 
 func RegisterPage(w http.ResponseWriter, r *http.Request) {
-	tmpl, _ := template.ParseFiles("register.html")
+	tmpl, err := template.ParseFiles("template/register.html", "template/header.html", "template/footer.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	tmpl.Execute(w, nil)
 }
 
 func CategoryHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl, _ := template.ParseFiles("category.html", "template/header.html", "template/footer.html")
-	tmpl.Execute(w, nil)
+	categorySlug := r.URL.Path[len("/categories/"):]
+	displayTitle := strings.ReplaceAll(categorySlug, "-", " ")
+	data := struct {
+		Title string
+		Page  string
+	}{
+		Title: displayTitle,
+		Page:  "categories",
+	}
+	tmpl, err := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
+	if err != nil {
+		http.Error(w, "Erreur catégorie: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	tmpl.ExecuteTemplate(w, "category.html", data)
 }

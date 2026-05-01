@@ -9,7 +9,7 @@ func Server() {
 	http.HandleFunc("/", Home)
 	http.HandleFunc("/login", LoginPage)
 	http.HandleFunc("/register", RegisterPage)
-	http.HandleFunc("/categories", CategoryHandler)
+	http.HandleFunc("/categories/", CategoryHandler)
 
 	as := http.FileServer(http.Dir("assets"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", as))
