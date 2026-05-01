@@ -6,11 +6,20 @@ import (
 	"net/http"
 )
 
-func Home(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := template.ParseFiles("index.html")
-
+func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	tmpl, err := template.ParseFiles("./pages/index.html")
 	if err != nil {
 		log.Fatal(err)
 	}
-	tmpl.Execute(w, nil)
+
+	tmpl.Execute(w, userInfos)
+}
+
+func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	tmpl, err := template.ParseFiles("./pages/forum.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmpl.Execute(w, userInfos)
 }
