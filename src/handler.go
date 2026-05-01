@@ -39,8 +39,9 @@ func RegisterPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func CategoryHandler(w http.ResponseWriter, r *http.Request) {
-	categorySlug := r.URL.Path[len("/categories/"):]
-	displayTitle := strings.ReplaceAll(categorySlug, "-", " ")
+	slug := r.URL.Path[len("/categories/"):]
+	displayTitle := strings.ReplaceAll(slug, "-", " ")
+	displayTitle = strings.Title(displayTitle)
 	data := struct {
 		Title string
 		Page  string
@@ -48,10 +49,6 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 		Title: displayTitle,
 		Page:  "categories",
 	}
-	tmpl, err := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
-	if err != nil {
-		http.Error(w, "Erreur catégorie: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	tmpl, _ := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
 	tmpl.ExecuteTemplate(w, "category.html", data)
 }

@@ -1,3 +1,4 @@
+/*----Ce sont de Variables des couleurs du forum que l'on appelle avec var()----*/
 :root {
     --bg-black: #000000;
     --grad-red: #DD150E;
@@ -20,6 +21,7 @@ body {
     min-height: 100vh; 
 }
 
+/*---------------------Parti du Header et qui inclut le Logo---------------------*/
 .logo-hero-section {
     width: 100%;
     height: 250px;
@@ -35,6 +37,7 @@ body {
     object-fit: contain;
 }
 
+/*---------------------Parti pour la barre de navigation---------------------*/
 .navbar {
     background-color: var(--nav-bg);
     display: flex;
@@ -68,12 +71,13 @@ body {
     color: transparent;
 }
 
+/*---------------------Parti poour la barre de Recherche avec un petite icône---------------------*/
 .search-bar-container {
     position: relative;
     flex: 0 1 400px;
     min-width: 200px;
     background: linear-gradient(to right, var(--grad-red), var(--grad-orange));
-    padding: 3px; /* Épaisseur de la bordure (Stroke) */
+    padding: 3px;
     border-radius: 30px;
 }
 
@@ -98,7 +102,7 @@ body {
     pointer-events: none;
 }
 
-/* 5. BOUTONS NAV */
+/*----------Partie pour les boutons et pour l'authentification----------*/
 .auth-buttons {
     display: flex;
     align-items: center;
@@ -113,7 +117,19 @@ body {
     text-decoration: none;
     font-weight: bold;
 }
+.btn-login-text {
+    color: white !important;
+    text-decoration: none !important;
+    font-size: 13px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
 
+.btn-login-text:hover {
+    color: #ccc !important;
+}
+
+/*----------Partie du contenu et de la grille----------*/
 .container {
     padding: 30px 5%;
     flex: 1;
@@ -154,6 +170,7 @@ body {
     flex-shrink: 0;
 }
 
+/*----------Partie des pages de Connexion et d'Inscription----------*/
 .auth-body {
     background: radial-gradient(circle, var(--diamond-red) 0%, var(--bg-black) 100%);
     min-height: 100vh;
@@ -228,17 +245,93 @@ body {
     margin: 40px auto 0;
 }
 
-.btn-login-text {
-    color: white !important;
-    text-decoration: none !important;
-    font-size: 13px;
-    font-weight: bold;
-    text-transform: uppercase;
+/*---------------------Partie des Pages pour les Catégories---------------------*/
+.category-title {
+    font-size: 32px;
+    margin-bottom: 25px;
+    font-weight: 700;
 }
 
-.btn-login-text:hover {
-    color: #ccc !important;
+.filter-tabs {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 25px;
 }
+
+.filter-link {
+    text-decoration: none;
+    color: #666;
+    font-weight: 700;
+    font-size: 14px;
+    padding-bottom: 5px;
+    transition: 0.3s;
+}
+
+.active-filter {
+    color: white;
+    border-bottom: 2px solid var(--grad-orange);
+}
+
+.action-bar {
+    margin-bottom: 30px;
+}
+
+.btn-discussion {
+    background: transparent;
+    border: 1px solid var(--grad-orange);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.forum-table-wrapper {
+    border: 1px solid #222;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.forum-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.forum-table th {
+    text-align: left;
+    padding: 15px;
+    color: #666;
+    font-size: 13px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #222;
+}
+
+.forum-table td {
+    padding: 15px;
+    border-bottom: 1px solid #111;
+    vertical-align: middle;
+}
+
+.subject-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.subject-category {
+    font-size: 11px;
+    color: var(--grad-red);
+    text-transform: capitalize;
+}
+
+.text-muted {
+    color: #999;
+    font-size: 13px;
+}
+
+/*----------Partie pour le Footer et la Mise page 
+(si on reduit la taille de l'écran que ca ne se superpose pas)----------*/
 
 .footer {
     text-align: center;
