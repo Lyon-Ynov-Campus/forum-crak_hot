@@ -27,11 +27,12 @@ func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	data := struct {
 		*UserInfos
 		IsConnected bool
+		Page        string
 	}{
 		UserInfos:   userInfos,
 		IsConnected: IsConnected(r),
+		Page:        "home",
 	}
-
 	tmpl.ExecuteTemplate(w, "index.html", data)
 }
 
@@ -53,40 +54,48 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 }
 
 func CategoryHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	slug := r.URL.Path[len("/categories/"):]
 	displayTitle := strings.ReplaceAll(slug, "-", " ")
 	displayTitle = strings.Title(displayTitle)
-
-	pseudo := "Invité"
-	if IsConnected(r) {
-		cookie, _ := r.Cookie("session_token")
-		decoded, _ := ValidateToken(cookie.Value)
-		pseudo = strings.Split(decoded, "|")[0]
-	}
 
 	data := struct {
 		Title       string
 		IsConnected bool
 		Username    string
+		Page        string
 	}{
 		Title:       displayTitle,
 		IsConnected: IsConnected(r),
-		Username:    pseudo,
+		Username:    "Invité",
+		Page:        "reseau",
 	}
 
-	tmpl, _ := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
+	tmpl, err := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
+	if err != nil {
+		fmt.Println("Erreur template:", err)
+		return
+	}
 	tmpl.ExecuteTemplate(w, "category.html", data)
 }
 
 func ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data := struct {
 		Page        string
 		IsConnected bool
+		Username    string // Ajoute ça pour éviter les bugs dans le header
 	}{
 		Page:        "forgot-password",
 		IsConnected: IsConnected(r),
+		Username:    "Invité",
 	}
-	tmpl, _ := template.ParseFiles("pages/forgot-pwd.html", "pages/header.html", "pages/footer.html")
+
+	tmpl, err := template.ParseFiles("pages/forgot-pwd.html", "pages/header.html", "pages/footer.html")
+	if err != nil {
+		fmt.Println("Erreur template:", err)
+		return
+	}
 	tmpl.ExecuteTemplate(w, "forgot-pwd.html", data)
 }
 

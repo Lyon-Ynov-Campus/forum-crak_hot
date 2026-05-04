@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func checkPasswordCharacters(UserInfos) {
+func checkPasswordCharacters(userInfos *UserInfos) {
 	var allowedCharacters = regexp.MustCompile(`^[\x21-\x7E]+$`)
 	var CPC_hasUpper = regexp.MustCompile(`[A-Z]`)
 	var CPC_hasLower = regexp.MustCompile(`[a-z]`)
@@ -42,7 +42,7 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		return
 	}
 
-	checkPasswordCharacters(*userInfos)
+	checkPasswordCharacters(userInfos)
 	if userInfos.AccountError == "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer." {
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""

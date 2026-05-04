@@ -9,7 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// CORRECTION : Ajout de l'étoile * et du nom de variable pour le pointeur
 func checkEditedPasswordCharacters(userInfos *UserInfos) {
 	var allowedCharacters = regexp.MustCompile(`^[\x21-\x7E]+$`)
 	var CPC_hasUpper = regexp.MustCompile(`[A-Z]`)
@@ -93,7 +92,6 @@ func dataEditPassword(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 
 func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	var comparepassword_hash string
-	// On utilise la DB globale déjà ouverte par ton collègue
 	err := db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
 	if err != nil {
 		userInfos.AccountError = "Erreur lors de la récupération du compte."
@@ -106,7 +104,6 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 			panic(err)
 		}
 
-		// CORRECTION : On déconnecte l'utilisateur en supprimant son cookie
 		userInfos.Username, userInfos.Email = "", ""
 		http.SetCookie(w, &http.Cookie{
 			Name:   "session_token",

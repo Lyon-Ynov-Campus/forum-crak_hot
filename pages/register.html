@@ -14,63 +14,55 @@
             <img src="/assets/logo.png" alt="Crak'Hot">
         </div>
 
-        <div class="auth-container">
-            <div class="auth-tabs">
+        <div class="auth-container"> <div class="auth-tabs">
                 <a href="/login" class="tab inactive">Se connecter</a>
                 <div class="tab active">S'inscrire</div>
             </div>
-        </div>
-        <!-- <section class="card stack auth-card">
-            <div class="pill"></div>
-            <h1>Inscription</h1>
-            <p class="muted">Crée ton compte et rejoins tes amis.</p> -->
-
-            <form action="/checkregister" method="post" class="auth-form">
+            
+            <form action="/checkregister" method="POST" class="auth-form">
                 <div class="form-group">
-                    <label for="username">Nom d'utilisateur :</label>
-                    <input type="text" id="username" name="username"  placeholder="Votre pseudo"
-                        value="{{if .AccountError}}{{.Username}}{{end}}" required>
+                    <label>Pseudo :</label>
+                    <input type="text" name="username" placeholder="Votre pseudo" value="{{if .AccountError}}{{.Username}}{{end}}" required>
                 </div>
-
                 <div class="form-group">
-                    <label for="email">E-mail :</label>
-                    <input type="email" id="email" name="email" placeholder="votre@email.com"
-                    value="{{if .AccountError}}{{.Email}}{{end}}" required>
+                    <label>Email :</label>
+                    <input type="email" name="email" placeholder="votre@email.com" value="{{if .AccountError}}{{.Email}}{{end}}" required>
                 </div>
-
                 <div class="form-group">
-                    <label for="password">Mot de passe :</label>
-                    <input type="password" id="password" name="password" placeholder="••••••••" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="confpassword">Confirmer le mot de passe :</label>
-                    <input type="password" id="confpassword" name="confpassword" placeholder="••••••••" required>
-                </div>
-
-                <div class="password-info">
-                    <div class="tooltip-container">
-                        <span class="info-icon">!</span>
-                        <span class="tooltip-text">
-                            <strong>Critères du mot de passe :</strong><br>
-                            • 12 caractères minimum<br>
-                            • Majuscule & Minuscule<br>
-                            • Chiffre & Caractère spécial<br>
-                            • Sans accent ni espace
-                        </span>
-                    </div>
-                    <span class="info-label">Exigences de sécurité</span>
-                </div>
-
-                    {{if .AccountError}}
-                        <div class="alert" style="color: #ff4d4d; margin-bottom: 15px; font-weight: 600;">
-                            {{.AccountError}}
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <label style="margin-bottom: 0;">Mot de passe :</label>
+                        
+                        <div class="password-info" style="margin: 0; display: flex; align-items: center;">
+                            <div class="tooltip-container" style="display: flex; align-items: center;">
+                                <span class="info-icon" style="width: 16px; height: 16px; line-height: 16px; font-size: 12px;">!</span>
+                                <span class="tooltip-text">
+                                    <strong>Critères du mot de passe :</strong><br>
+                                    • 12 caractères minimum<br>
+                                    • Majuscule & Minuscule<br>
+                                    • Chiffre & Caractère spécial<br>
+                                    • Sans accent ni espace
+                                </span>
+                            </div>
+                            <span class="info-label" style="font-size: 11px; margin-left: 5px; color: #999;">Exigences de sécurité</span>
                         </div>
-                    {{end}}
+                    </div>
+                    
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmer :</label>
+                    <input type="password" name="confpassword" placeholder="••••••••" required>
+                </div>
+
+                {{if .AccountError}}
+                    <div class="alert" style="color: #ff4d4d; margin-top: 10px; font-weight: 600;">
+                        {{.AccountError}}
+                    </div>
+                {{end}}
 
                 <button type="submit" class="btn-black">S'inscrire</button>
             </form>
-        </section>
+        </div>
     </main>
 </body>
 </html>
