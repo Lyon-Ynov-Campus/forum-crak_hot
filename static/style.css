@@ -117,6 +117,7 @@ body {
     text-decoration: none;
     font-weight: bold;
 }
+
 .btn-login-text {
     color: white !important;
     text-decoration: none !important;
@@ -127,6 +128,15 @@ body {
 
 .btn-login-text:hover {
     color: #ccc !important;
+}
+
+.btn-logout {
+    background: linear-gradient(to right, var(--grad-red), var(--grad-orange));
+    color: white !important;
+    padding: 10px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
 }
 
 /*----------Partie du contenu et de la grille----------*/
@@ -166,6 +176,10 @@ body {
     display: flex;
     align-items: center;
     gap: 20px;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    width: 100%;
+
 }
 
 .card-icon {
@@ -340,12 +354,17 @@ body {
 .btn-post {
     background: linear-gradient(to right, var(--grad-red), var(--grad-orange));
     color: white !important;
-    padding: 10px 25px;
+    width: 80px;
+    height: 20px;
+    padding: 9px 12px 12px 12px;
+    gap: 8px;
     border-radius: 8px;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 20px;
     transition: 0.3s;
     box-shadow: 0 4px 15px rgba(221, 21, 14, 0.3);
+    text-decoration: none;
+    
 }
 
 .btn-post:hover {

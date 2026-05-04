@@ -68,3 +68,24 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl, _ := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
 	tmpl.ExecuteTemplate(w, "category.html", data)
 }
+
+func FakeLogin(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "token-test",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   3600,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "session_token",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}

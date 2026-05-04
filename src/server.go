@@ -11,6 +11,9 @@ func Server() {
 	http.HandleFunc("/register", RegisterPage)
 	http.HandleFunc("/categories/", CategoryHandler)
 
+	http.HandleFunc("/fake-login", FakeLogin)
+	http.HandleFunc("/fake-logout", Logout)
+
 	as := http.FileServer(http.Dir("assets"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", as))
 
