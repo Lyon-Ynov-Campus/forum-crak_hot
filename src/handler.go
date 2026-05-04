@@ -6,12 +6,26 @@ import (
 	"strings"
 )
 
+func IsConnected(r *http.Request) bool {
+	cookie, err := r.Cookie("session_token")
+	if err != nil || cookie.Value == "" {
+		return false
+	}
+	return true
+}
+
 func Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
-	data := struct{ Page string }{Page: "home"}
+	data := struct {
+		Page        string
+		IsConnected bool
+	}{
+		Page:        "home",
+		IsConnected: IsConnected(r),
+	}
 	tmpl, err := template.ParseFiles("template/index.html", "template/header.html", "template/footer.html")
 	if err != nil {
 		http.Error(w, "Erreur template Home: "+err.Error(), http.StatusInternalServerError)
@@ -43,11 +57,13 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	displayTitle := strings.ReplaceAll(slug, "-", " ")
 	displayTitle = strings.Title(displayTitle)
 	data := struct {
-		Title string
-		Page  string
+		Title       string
+		Page        string
+		IsConnected bool
 	}{
-		Title: displayTitle,
-		Page:  "categories",
+		Title:       displayTitle,
+		Page:        "categories",
+		IsConnected: IsConnected(r),
 	}
 	tmpl, _ := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
 	tmpl.ExecuteTemplate(w, "category.html", data)
