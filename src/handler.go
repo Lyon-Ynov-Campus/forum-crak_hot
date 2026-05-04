@@ -1,6 +1,7 @@
 package forum
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -11,7 +12,7 @@ func IsConnected(r *http.Request) bool {
 	if err != nil || cookie.Value == "" {
 		return false
 	}
-	return true
+	return cookie.Value != ""
 }
 
 func Home(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +72,41 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	tmpl, _ := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
 	tmpl.ExecuteTemplate(w, "category.html", data)
+}
+
+func ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
+	data := struct {
+		Page        string
+		IsConnected bool
+		Pseudo      string
+	}{
+		Page:        "forgot-password",
+		IsConnected: IsConnected(r),
+	}
+	tmpl, _ := template.ParseFiles("template/forgot-pwd.html", "template/header.html", "template/footer.html")
+	tmpl.Execute(w, data)
+}
+
+func SendResetLink(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/forgot-pwd", http.StatusSeeOther)
+		return
+	}
+	email := r.FormValue("email")
+
+	fmt.Printf("\n[backend]: Demande de réinitialisation de mot de passe pour %s\n", email)
+
+	token := "RESET-" + GenerateToken(email)
+
+	fmt.Printf("[backend] Lien généré : http://localhost:8080/reset-pwd?token=%s\n\n", token)
+	fmt.Fprint(w, "Si cet email existe, un lien a été envoyé.")
+
+	/*println("EMAIL DE RECUPERATION")
+	println("Destinataire :", email)
+	println("Lien : http://localhost:8080/reset-pwd?token=" + token)
+	println("------------------------------------")
+
+	fmt.Fprint(w, "Un lien de récupération a été envoyé à votre adresse mail")*/
 }
 
 func FakeLogin(w http.ResponseWriter, r *http.Request) {

@@ -130,6 +130,23 @@ body {
     color: #ccc !important;
 }
 
+/*----------Partie pour le lien du mot de passe oublié----------*/
+.forgot-link {
+    display: block;
+    text-align: right;
+    font-size: 11px;
+    color: #999;
+    text-decoration: none;
+    margin-top: 5px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.forgot-link:hover {
+    color: var(--grad-orange);
+    text-decoration: underline;
+}
+
 /*----------Partie pour le Profil Ustilisateur----------*/
 .user-profile-header {
     display: flex;

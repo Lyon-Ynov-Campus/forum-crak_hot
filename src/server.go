@@ -11,6 +11,9 @@ func Server() {
 	http.HandleFunc("/register", RegisterPage)
 	http.HandleFunc("/categories/", CategoryHandler)
 
+	http.HandleFunc("/forgot-pwd", ForgotPasswordPage)
+	http.HandleFunc("/send-reset", SendResetLink)
+
 	http.HandleFunc("/fake-login", FakeLogin)
 	http.HandleFunc("/fake-logout", Logout)
 
