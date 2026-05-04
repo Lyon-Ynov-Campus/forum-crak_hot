@@ -26,9 +26,16 @@
 
         <div class="auth-buttons">
             {{if .IsConnected}}
-                <a href="/logout" class="btn-logout">Se déconnecter</a>
-                <div class="user-avatar" style="width: 35px; height: 35px" background-color="#444; border-radius: 50%;"></div>
-            {{else}}
+                <div class="user-profile-header">
+                    <span class="user-pseudo">{{.Pseudo}}</span>
+                    <div class="user-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <a href="/logout" class="logout-icon">
+                        <i class="fa-solid fa-power-off"></i>
+                    </a>
+                </div>
+                {{else}}
             <a href="/login" class="btn-login-text">Se connecter</a>
             <a href="/register" class="btn-register">S'inscrire</a>
             {{end}}

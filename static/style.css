@@ -130,13 +130,40 @@ body {
     color: #ccc !important;
 }
 
-.btn-logout {
-    background: linear-gradient(to right, var(--grad-red), var(--grad-orange));
-    color: white !important;
-    padding: 10px 22px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
+/*----------Partie pour le Profil Ustilisateur----------*/
+.user-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-pseudo {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: #D9D9D9;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #333;
+    font-size: 20px;
+}
+
+.logout-icon {
+    color: #666;
+    margin-left: 5px;
+    transition: 0.3s;
+    font-size: 14px;
+}
+
+.logout-icon:hover {
+    color: var(--grad-red);
 }
 
 /*----------Partie du contenu et de la grille----------*/

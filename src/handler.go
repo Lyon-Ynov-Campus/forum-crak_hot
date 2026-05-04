@@ -22,9 +22,11 @@ func Home(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Page        string
 		IsConnected bool
+		Pseudo      string
 	}{
 		Page:        "home",
 		IsConnected: IsConnected(r),
+		Pseudo:      "Pseudo",
 	}
 	tmpl, err := template.ParseFiles("template/index.html", "template/header.html", "template/footer.html")
 	if err != nil {
@@ -60,10 +62,12 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 		Title       string
 		Page        string
 		IsConnected bool
+		Pseudo      string
 	}{
 		Title:       displayTitle,
 		Page:        "categories",
 		IsConnected: IsConnected(r),
+		Pseudo:      "Pseudo",
 	}
 	tmpl, _ := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
 	tmpl.ExecuteTemplate(w, "category.html", data)
