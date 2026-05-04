@@ -16,7 +16,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 }
 
 func checkloginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	userInfos.Email = r.FormValue("email")
+	userInfos.Email_Username = r.FormValue("email_Username")
 	userInfos.Password = r.FormValue("password")
 
 	dataLoginCheck(w, r, userInfos)
@@ -66,13 +66,29 @@ func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserI
 func editusernameHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.EditedUsername = r.FormValue("editedusername")
 	dataEditUsername(w, r, userInfos)
-	http.Redirect(w, r, "/forum", http.StatusSeeOther)
+	if userInfos.AccountError == "" || userInfos.AccountError == "Nom d'utilisateur modifié avec succès." {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+	} else {
+		tmpl, err := template.ParseFiles("./pages/account.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+		tmpl.Execute(w, userInfos)
+	}
 }
 
 func editemailHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.EditedEmail = r.FormValue("editedemail")
 	dataEditEmail(w, r, userInfos)
-	http.Redirect(w, r, "/forum", http.StatusSeeOther)
+	if userInfos.AccountError == "" || userInfos.AccountError == "Email modifié avec succès." {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+	} else {
+		tmpl, err := template.ParseFiles("./pages/account.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+		tmpl.Execute(w, userInfos)
+	}
 }
 
 func editpasswordHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
@@ -89,7 +105,9 @@ func editpasswordHandler(w http.ResponseWriter, r *http.Request, userInfos *User
 			Name:  "DBid",
 			Value: userInfos.DBid,
 		})
-		http.Redirect(w, r, "/forum", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 	}
 
 }

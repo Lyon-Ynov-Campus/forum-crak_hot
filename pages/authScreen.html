@@ -16,8 +16,8 @@
             <form action="/checklogin" method="get" class="stack">
                 {{ $badCreds := eq .AccountError "Email ou mot de passe incorrect. Veuillez réessayer." }}
 
-                <label for="email">E-mail :</label>
-                <input type="email" id="email" name="email" required value="{{if $badCreds}}{{.Email}}{{end}}">
+                <label for="email_Username">E-mail ou nom d'utilisateur :</label>
+                <input type="text" id="email_Username" name="email_Username" required value="{{if $badCreds}}{{.Email}}{{end}}">
 
                 <label for="password">Mot de passe :</label>
                 <input type="password" id="password" name="password" required>

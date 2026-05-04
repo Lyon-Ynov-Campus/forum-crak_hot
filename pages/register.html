@@ -4,23 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/styles.css">
-    <title>Musica | Inscription</title>
+    <title>Inscription</title>
 </head>
 <body>
     <main class="auth-shell">
         <section class="card stack auth-card">
-            <div class="pill">Musica</div>
+            <div class="pill"></div>
             <h1>Inscription</h1>
             <p class="muted">Crée ton compte et rejoins tes amis.</p>
 
             <form action="/checkregister" method="post" class="stack">
-                {{ $hasError := or (eq .AccountError "Cet email est déjà utilisé. Veuillez réessayer.") (eq .AccountError "Les mots de passe ne correspondent pas. Veuillez réessayer.") (eq .AccountError "La taille du mot de passe doit être d'au moins 12 caracères. Veuillez réessayer.") (eq .AccountError "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer.") }}
+
 
                 <label for="username">Nom d'utilisateur :</label>
-                <input type="text" id="username" name="username" required value="{{if $hasError}}{{.Username}}{{end}}">
+                <input type="text" id="username" name="username" required value="{{if .AccountError}}{{.Username}}{{end}}">
 
                 <label for="email">E-mail :</label>
-                <input type="email" id="email" name="email" required value="{{if $hasError}}{{.Email}}{{end}}">
+                <input type="email" id="email" name="email" required value="{{if .AccountError}}{{.Email}}{{end}}">
 
                 <label for="password">Mot de passe :</label>
                 <input type="password" id="password" name="password" required>
@@ -28,9 +28,9 @@
                 <label for="confpassword">Confirmer le mot de passe :</label>
                 <input type="password" id="confpassword" name="confpassword" required>
 
-                <p class="muted">Règles : majuscule, minuscule, chiffre, caractère spécial, sans accent ni espace (12+ caractères).</p>
+                <p class="muted">Critère minimum du mot de passe : majuscule, minuscule, chiffre, caractère spécial, sans accent ni espace (12+ caractères).</p>
 
-                {{if $hasError}}
+                {{if .AccountError}}
                     <div class="alert">{{.AccountError}}</div>
                 {{end}}
 

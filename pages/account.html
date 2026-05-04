@@ -25,6 +25,11 @@
                 <form action="/editusername" method="post" class="stack">
                     <label for="editedusername">Nouveau nom d'utilisateur :</label>
                     <input type="text" id="editedusername" name="editedusername" required>
+                    {{if or (eq .AccountError "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.") (eq .AccountError "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer.") }}
+                        <div class="alert">{{.AccountError}}</div>
+                    {{else if eq .AccountError "Nom d'utilisateur modifié avec succès."}}
+                        <div class="alert success">{{.AccountError}}</div>
+                    {{end}}
                     <div class="btn-row">
                         <input type="submit" value="Valider">
                     </div>
@@ -36,6 +41,11 @@
                 <form action="/editemail" method="post" class="stack">
                     <label for="editedemail">Nouvel email :</label>
                     <input type="email" id="editedemail" name="editedemail" required>
+                    {{if eq .AccountError "Cet email est déjà utilisé. Veuillez en choisir un autre."}}
+                        <div class="alert">{{.AccountError}}</div>
+                    {{else if eq .AccountError "Email modifié avec succès."}}
+                        <div class="alert success">{{.AccountError}}</div>
+                    {{end}}
                     <div class="btn-row">
                         <input type="submit" value="Valider">
                     </div>
@@ -49,9 +59,11 @@
                     <input type="password" id="editedpassword" name="editedpassword" required>
                     <label for="confeditedpassword">Confirmer le nouveau mot de passe :</label>
                     <input type="password" id="confeditedpassword" name="confeditedpassword" required>
-                    {{if eq .AccountError "Les nouveaux mots de passe ne correspondent pas. Veuillez réessayer."}}
+                    {{if .AccountError}}
                         <div class="alert">{{.AccountError}}</div>
                     {{end}}
+                    <p class="muted">Critère minimum du mot de passe : majuscule, minuscule, chiffre, caractère spécial, sans accent ni espace (12+ caractères).</p>
+
                     <div class="btn-row">
                         <input type="submit" value="Valider">
                     </div>

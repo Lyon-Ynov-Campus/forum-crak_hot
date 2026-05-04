@@ -1,10 +1,9 @@
 package forum
 
 import (
-	"database/sql"
-	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,12 +17,31 @@ func checkPasswordCharacters(UserInfos) {
 
 	if !allowedCharacters.MatchString(userInfos.Password) || !CPC_hasUpper.MatchString(userInfos.Password) || !CPC_hasLower.MatchString(userInfos.Password) || !CPC_hasDigit.MatchString(userInfos.Password) || !hasSpecial.MatchString(userInfos.Password) {
 		userInfos.AccountError = "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer."
-		fmt.Println()
 	}
 }
 
 func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
+	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
+	var usernameCharIsOk bool
+
+	for _, charac := range userInfos.Username {
+		if strings.ContainsRune(checkUsernameChar, charac) {
+			usernameCharIsOk = false
+			break
+		} else {
+			usernameCharIsOk = true
+		}
+	}
+
+	if usernameCharIsOk == false {
+		userInfos.AccountError = "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer."
+		userInfos.Password = ""
+		userInfos.ConfPassword = ""
+		http.Redirect(w, r, "/register", http.StatusSeeOther)
+		return
+	}
+
 	checkPasswordCharacters(*userInfos)
 	if userInfos.AccountError == "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer." {
 		userInfos.Password = ""
@@ -48,82 +66,74 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		return
 	}
 
-	dbstring := "./database.db"
-	db, err := sql.Open("sqlite3", dbstring)
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer db.Close()
-
 	password_hash, err := bcrypt.GenerateFromPassword([]byte(userInfos.Password), bcrypt.DefaultCost)
 	if err != nil {
 		panic(err)
 	}
 
-	createUserTable := `
-		CREATE TABLE IF NOT EXISTS users (
-			id integer not null primary key autoincrement,
-			email text not null unique,
-			username text not null,
-			password_hash text not null,
-			status integer default 1,
-			wins integer default 0,
-			gamesplayed integer default 0
-		);`
-	_, err = db.Exec(createUserTable)
-
-	senddata := `
-		INSERT INTO users (email, username, password_hash) VALUES ('` + userInfos.Email + `', '` + userInfos.Username + `', '` + string(password_hash) + `');
-		`
-	_, err = db.Exec(senddata)
+	_, err = db.Exec("INSERT INTO Users (username, email, password_hash) VALUES (?, ?, ?)", userInfos.Username, userInfos.Email, string(password_hash))
 	if err != nil {
-		userInfos.AccountError = "Cet email est déjà utilisé. Veuillez réessayer."
+		errMsg := err.Error()
+		if regexp.MustCompile(`(?i)email`).MatchString(errMsg) && regexp.MustCompile(`(?i)unique`).MatchString(errMsg) {
+			userInfos.AccountError = "Cet email est déjà utilisé. Veuillez en choisir un autre."
+		} else if regexp.MustCompile(`(?i)username`).MatchString(errMsg) && regexp.MustCompile(`(?i)unique`).MatchString(errMsg) {
+			userInfos.AccountError = "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre."
+		} else {
+			userInfos.AccountError = errMsg
+		}
+		userInfos.Password = ""
+		userInfos.ConfPassword = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
-	} else {
-		userInfos.AccountError = ""
-		db.QueryRow("SELECT id FROM users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
-		http.SetCookie(w, &http.Cookie{
-			Name:  "DBid",
-			Value: userInfos.DBid,
-		})
-		userInfos.DBid = ""
-		http.Redirect(w, r, "/forum", http.StatusSeeOther)
+		return
 	}
+	userInfos.AccountError = ""
+	db.QueryRow("SELECT id FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
+	http.SetCookie(w, &http.Cookie{
+		Name:  "DBid",
+		Value: userInfos.DBid,
+	})
+	userInfos.DBid = ""
+	http.Redirect(w, r, "/forum", http.StatusSeeOther)
 	userInfos.Password = ""
 	userInfos.EditedPassword = ""
 	password_hash = nil
 }
 
 func dataLoginCheck(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	dbstring := "./database.db"
-	db, err := sql.Open("sqlite3", dbstring)
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer db.Close()
-
 	var comparepassword_hash string
-	db.QueryRow("SELECT password_hash FROM users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
-	db.QueryRow("SELECT username FROM users WHERE email=?", userInfos.Email).Scan(&userInfos.Username)
+
+	if strings.Contains(userInfos.Email_Username, "@") {
+		// Le champs de login est un mail
+		userInfos.Email = userInfos.Email_Username
+
+		db.QueryRow("SELECT username FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.Username)
+		db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
+	} else {
+		// Le champs de login est un username
+		userInfos.Username = userInfos.Email_Username
+
+		db.QueryRow("SELECT email FROM Users WHERE username=?", userInfos.Email_Username).Scan(&userInfos.Email)
+		db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
+	}
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.Password)) == nil {
 		userInfos.AccountError = ""
-		db.QueryRow("SELECT id FROM users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
+		db.QueryRow("SELECT id FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
 		http.SetCookie(w, &http.Cookie{
 			Name:  "DBid",
 			Value: userInfos.DBid,
 		})
 		userInfos.DBid = ""
+		userInfos.Password = ""
+		userInfos.EditedPassword = ""
+		comparepassword_hash = ""
 		http.Redirect(w, r, "/forum", http.StatusSeeOther)
 	} else {
 		userInfos.AccountError = "Email ou mot de passe incorrect. Veuillez réessayer."
+		userInfos.Password = ""
+		userInfos.EditedPassword = ""
+		comparepassword_hash = ""
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
-	userInfos.Password = ""
-	userInfos.EditedPassword = ""
-	comparepassword_hash = ""
+
 }

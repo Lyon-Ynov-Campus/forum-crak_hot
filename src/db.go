@@ -21,18 +21,18 @@ func InitDB() { //corps debut repo soutien rev
 func CreateDB() { //rev slide 39 soutien pour creer table
 	InitDB()
 	CreateTableUser := `
-	CREATE TABLE IF NOT EXISTS User(
+	CREATE TABLE IF NOT EXISTS Users(
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	pseudo TEXT NOT NULL UNIQUE,
+	username TEXT NOT NULL UNIQUE,
 	email TEXT NOT NULL UNIQUE,
-	mot_de_passe TEXT NOT NULL,
+	password_hash TEXT NOT NULL,
 	photo_profil TEXT 
 	);
 	` //type TEXT pr photo car soit nom du file soit url de la P
 
 	_, err := db.Exec(CreateTableUser)
 	if err != nil {
-		fmt.Println("erreur table user", err)
+		fmt.Println("erreur table users", err)
 		panic(err)
 	}
 
@@ -101,6 +101,5 @@ func CreateDB() { //rev slide 39 soutien pour creer table
 		fmt.Println("erreur table session", err)
 		panic(err)
 	}
-	defer db.Close()
 
 }

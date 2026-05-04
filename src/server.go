@@ -12,6 +12,7 @@ type UserInfos struct {
 	EditedUsername        string
 	Email                 string
 	EditedEmail           string
+	Email_Username        string
 	Password              string
 	EditedPassword        string
 	ConfPassword          string
