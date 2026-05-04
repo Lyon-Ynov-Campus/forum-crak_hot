@@ -162,6 +162,12 @@ body {
     transform: translateY(-5px);
 }
 
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
 .card-icon {
     width: 50px;
     height: 50px;
@@ -250,6 +256,7 @@ body {
     font-size: 32px;
     margin-bottom: 25px;
     font-weight: 700;
+    margin: 0;
 }
 
 .filter-tabs {
@@ -328,6 +335,22 @@ body {
 .text-muted {
     color: #999;
     font-size: 13px;
+}
+
+.btn-post {
+    background: linear-gradient(to right, var(--grad-red), var(--grad-orange));
+    color: white !important;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(221, 21, 14, 0.3);
+}
+
+.btn-post:hover {
+    transform: translate(-2px);
+    box-shadow: 0 6px 20px rgba(221, 21, 14, 0.5);
 }
 
 /*----------Partie pour le Footer et la Mise page 
