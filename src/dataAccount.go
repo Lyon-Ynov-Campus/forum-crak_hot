@@ -1,7 +1,6 @@
 package forum
 
 import (
-	"database/sql"
 	"net/http"
 	"regexp"
 	"strings"
@@ -10,47 +9,44 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func checkEditedPasswordCharacters(UserInfos) {
+// CORRECTION : Ajout de l'étoile * et du nom de variable pour le pointeur
+func checkEditedPasswordCharacters(userInfos *UserInfos) {
 	var allowedCharacters = regexp.MustCompile(`^[\x21-\x7E]+$`)
 	var CPC_hasUpper = regexp.MustCompile(`[A-Z]`)
 	var CPC_hasLower = regexp.MustCompile(`[a-z]`)
 	var CPC_hasDigit = regexp.MustCompile(`[0-9]`)
 	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\\]^_{|}~]`)
 
-	if !allowedCharacters.MatchString(userInfos.EditedPassword) || !CPC_hasUpper.MatchString(userInfos.EditedPassword) || !CPC_hasLower.MatchString(userInfos.EditedPassword) || !CPC_hasDigit.MatchString(userInfos.EditedPassword) || !hasSpecial.MatchString(userInfos.EditedPassword) {
-		userInfos.AccountError = "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer."
+	if !allowedCharacters.MatchString(userInfos.EditedPassword) ||
+		!CPC_hasUpper.MatchString(userInfos.EditedPassword) ||
+		!CPC_hasLower.MatchString(userInfos.EditedPassword) ||
+		!CPC_hasDigit.MatchString(userInfos.EditedPassword) ||
+		!hasSpecial.MatchString(userInfos.EditedPassword) {
+		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus. Veuillez réessayer."
 	}
 }
 
 func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
-	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
-	var usernameCharIsOk bool
+	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
+	var usernameCharIsOk = true
 
 	for _, charac := range userInfos.EditedUsername {
 		if strings.ContainsRune(checkUsernameChar, charac) {
 			usernameCharIsOk = false
 			break
-		} else {
-			usernameCharIsOk = true
 		}
 	}
 
-	if usernameCharIsOk == false {
-		userInfos.AccountError = "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer."
+	if !usernameCharIsOk {
+		userInfos.AccountError = "Le seul caractère spécial autorisé est _ . Veuillez réessayer."
 		return
 	}
 
 	_, err := db.Exec("UPDATE Users SET username=? WHERE email=?", userInfos.EditedUsername, userInfos.Email)
 	if err != nil {
-		errMsg := err.Error()
-		if regexp.MustCompile(`(?i)username`).MatchString(errMsg) && regexp.MustCompile(`(?i)unique`).MatchString(errMsg) {
-			userInfos.AccountError = "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre."
-			return
-		} else {
-			userInfos.AccountError = errMsg
-			return
-		}
+		userInfos.AccountError = "Ce nom d'utilisateur est déjà utilisé."
+		return
 	}
 	userInfos.Username = userInfos.EditedUsername
 	userInfos.AccountError = "Nom d'utilisateur modifié avec succès."
@@ -59,14 +55,8 @@ func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 func dataEditEmail(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	_, err := db.Exec("UPDATE Users SET email=? WHERE email=?", userInfos.EditedEmail, userInfos.Email)
 	if err != nil {
-		errMsg := err.Error()
-		if regexp.MustCompile(`(?i)email`).MatchString(errMsg) && regexp.MustCompile(`(?i)unique`).MatchString(errMsg) {
-			userInfos.AccountError = "Cet email est déjà utilisé. Veuillez en choisir un autre."
-			return
-		} else {
-			userInfos.AccountError = errMsg
-			return
-		}
+		userInfos.AccountError = "Cet email est déjà utilisé."
+		return
 	}
 	userInfos.Email = userInfos.EditedEmail
 	userInfos.AccountError = "Email modifié avec succès."
@@ -74,64 +64,60 @@ func dataEditEmail(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 
 func dataEditPassword(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
-	checkEditedPasswordCharacters(*userInfos)
-	if userInfos.AccountError == "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer." {
+	checkEditedPasswordCharacters(userInfos)
+	if userInfos.AccountError != "" {
 		userInfos.EditedPassword = ""
 		userInfos.ConfEditedPassword = ""
 		return
 	}
 
 	if len(userInfos.EditedPassword) < 12 {
-		userInfos.AccountError = "La taille du mot de passe doit être d'au moins 12 caracères. Veuillez réessayer."
-		userInfos.EditedPassword = ""
-		userInfos.ConfEditedPassword = ""
+		userInfos.AccountError = "La taille du mot de passe doit être d'au moins 12 caractères."
 		return
 	}
 
 	if userInfos.EditedPassword != userInfos.ConfEditedPassword {
-		userInfos.AccountError = "Les nouveaux mots de passe ne correspondent pas. Veuillez réessayer."
-		userInfos.EditedPassword = ""
-		userInfos.ConfEditedPassword = ""
+		userInfos.AccountError = "Les nouveaux mots de passe ne correspondent pas."
 		return
 	}
 
-	editedpassword_hash, err := bcrypt.GenerateFromPassword([]byte(userInfos.EditedPassword), bcrypt.DefaultCost)
+	hash, _ := bcrypt.GenerateFromPassword([]byte(userInfos.EditedPassword), bcrypt.DefaultCost)
+	_, err := db.Exec("UPDATE Users SET password_hash=? WHERE email=?", string(hash), userInfos.Email)
 	if err != nil {
 		panic(err)
 	}
-
-	_, err = db.Exec("UPDATE users SET password_hash=? WHERE email=?", string(editedpassword_hash), userInfos.Email)
-	if err != nil {
-		panic(err)
-	}
-	editedpassword_hash = nil
 	userInfos.EditedPassword = ""
+	userInfos.ConfEditedPassword = ""
 	userInfos.AccountError = "Mot de passe modifié avec succès."
 }
 
 func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	dbstring := "./Forum.db"
-	db, err := sql.Open("sqlite3", dbstring)
-
+	var comparepassword_hash string
+	// On utilise la DB globale déjà ouverte par ton collègue
+	err := db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
 	if err != nil {
-		panic(err)
+		userInfos.AccountError = "Erreur lors de la récupération du compte."
+		return
 	}
 
-	defer db.Close()
-
-	var comparepassword_hash string
-	db.QueryRow("SELECT password_hash FROM users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
-
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.DeleteAccountPassword)) == nil {
-		_, err = db.Exec("DELETE FROM users WHERE email=?", userInfos.Email)
+		_, err = db.Exec("DELETE FROM Users WHERE email=?", userInfos.Email)
 		if err != nil {
 			panic(err)
 		}
+
+		// CORRECTION : On déconnecte l'utilisateur en supprimant son cookie
+		userInfos.Username, userInfos.Email = "", ""
+		http.SetCookie(w, &http.Cookie{
+			Name:   "session_token",
+			Value:  "",
+			Path:   "/",
+			MaxAge: -1,
+		})
 		userInfos.AccountError = "Compte supprimé avec succès."
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
-		userInfos.AccountError = "Mot de passe incorrect. Impossible de supprimer le compte. Veuillez réessayer."
-		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		userInfos.AccountError = "Mot de passe incorrect. Impossible de supprimer le compte."
+		userInfos.DeleteAccountPassword = ""
 	}
-	comparepassword_hash = ""
-	userInfos.DeleteAccountPassword = ""
 }

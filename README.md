@@ -8,3 +8,7 @@ Note :
 - ajouter pp
 - Système mdp oublié
 - erreur un seul endroit dans account
+
+Prendre index.html dans dossier template
+utilisation du fichier register.html du dossier pages
+utilisation du fichier authScreen.html du dossier pages

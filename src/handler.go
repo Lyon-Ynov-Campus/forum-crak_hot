@@ -13,43 +13,68 @@ func IsConnected(r *http.Request) bool {
 	if err != nil || cookie.Value == "" {
 		return false
 	}
-	return cookie.Value != ""
+	return true
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	tmpl, err := template.ParseFiles("./pages/index.html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	tmpl, err := template.ParseFiles("pages/index.html", "pages/header.html", "pages/footer.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmpl.Execute(w, userInfos)
+	data := struct {
+		*UserInfos
+		IsConnected bool
+	}{
+		UserInfos:   userInfos,
+		IsConnected: IsConnected(r),
+	}
+
+	tmpl.ExecuteTemplate(w, "index.html", data)
 }
 
 func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	tmpl, err := template.ParseFiles("./pages/forum.html")
+	tmpl, err := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmpl.Execute(w, userInfos)
+	data := struct {
+		*UserInfos
+		IsConnected bool
+	}{
+		UserInfos:   userInfos,
+		IsConnected: IsConnected(r),
+	}
+
+	tmpl.ExecuteTemplate(w, "forum.html", data)
 }
 
 func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	slug := r.URL.Path[len("/categories/"):]
 	displayTitle := strings.ReplaceAll(slug, "-", " ")
 	displayTitle = strings.Title(displayTitle)
+
+	pseudo := "Invité"
+	if IsConnected(r) {
+		cookie, _ := r.Cookie("session_token")
+		decoded, _ := ValidateToken(cookie.Value)
+		pseudo = strings.Split(decoded, "|")[0]
+	}
+
 	data := struct {
 		Title       string
-		Page        string
 		IsConnected bool
-		Pseudo      string
+		Username    string
 	}{
 		Title:       displayTitle,
-		Page:        "categories",
 		IsConnected: IsConnected(r),
-		Pseudo:      "Pseudo",
+		Username:    pseudo,
 	}
-	tmpl, _ := template.ParseFiles("template/category.html", "template/header.html", "template/footer.html")
+
+	tmpl, _ := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
 	tmpl.ExecuteTemplate(w, "category.html", data)
 }
 
@@ -57,35 +82,26 @@ func ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Page        string
 		IsConnected bool
-		Pseudo      string
 	}{
 		Page:        "forgot-password",
 		IsConnected: IsConnected(r),
 	}
-	tmpl, _ := template.ParseFiles("template/forgot-pwd.html", "template/header.html", "template/footer.html")
-	tmpl.Execute(w, data)
+	tmpl, _ := template.ParseFiles("pages/forgot-pwd.html", "pages/header.html", "pages/footer.html")
+	tmpl.ExecuteTemplate(w, "forgot-pwd.html", data)
 }
 
 func SendResetLink(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/forgot-pwd", http.StatusSeeOther)
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
 		return
 	}
 	email := r.FormValue("email")
 
-	fmt.Printf("\n[backend]: Demande de réinitialisation de mot de passe pour %s\n", email)
-
+	fmt.Printf("\n[backend]: Demande de réinitialisation pour %s\n", email)
 	token := "RESET-" + GenerateToken(email)
-
 	fmt.Printf("[backend] Lien généré : http://localhost:8080/reset-pwd?token=%s\n\n", token)
-	fmt.Fprint(w, "Si cet email existe, un lien a été envoyé.")
 
-	/*println("EMAIL DE RECUPERATION")
-	println("Destinataire :", email)
-	println("Lien : http://localhost:8080/reset-pwd?token=" + token)
-	println("------------------------------------")
-
-	fmt.Fprint(w, "Un lien de récupération a été envoyé à votre adresse mail")*/
+	fmt.Fprint(w, "Si cet email existe, un lien a été envoyé dans votre terminal.")
 }
 
 func FakeLogin(w http.ResponseWriter, r *http.Request) {

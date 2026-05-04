@@ -27,28 +27,34 @@ var userInfos UserInfos
 
 func StartServer() {
 
-	//Handlers corps principal
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		homeHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/forum", func(w http.ResponseWriter, r *http.Request) {
 		forumHandler(w, r, &userInfos)
 	})
+	http.HandleFunc("/categories/", CategoryHandler)
+	http.HandleFunc("/forgot-password", ForgotPasswordPage)
+	http.HandleFunc("/send-reset", SendResetLink)
+
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		loginHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/checklogin", func(w http.ResponseWriter, r *http.Request) {
 		checkloginHandler(w, r, &userInfos)
 	})
+
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		registerHandler(w, &userInfos)
+		registerHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/checkregister", func(w http.ResponseWriter, r *http.Request) {
 		checkregisterHandler(w, r, &userInfos)
 	})
+
 	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		logoutHandler(w, r, &userInfos)
 	})
+
 	http.HandleFunc("/editaccount", func(w http.ResponseWriter, r *http.Request) {
 		editaccountHandler(w, r, &userInfos)
 	})
@@ -68,6 +74,12 @@ func StartServer() {
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	log.Printf("Server listening on http://127.0.0.1:8080")
-	http.ListenAndServe(serverAddr, nil)
+	as := http.FileServer(http.Dir("assets"))
+	http.Handle("/assets/", http.StripPrefix("/assets/", as))
+
+	log.Printf("Server listening on http://%s", serverAddr)
+	err := http.ListenAndServe(serverAddr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -1,93 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/styles.css">
-    <title>Compte</title>
-</head>
-<body>
-    <main class="page">
-        <section class="card stack">
-            <div class="pill">Compte</div>
-            <h1>Réglages</h1>
-        </section>
+{{template "header" .}}
+<main class="page container"> <section class="card stack" style="margin-top: 2rem;">
+        <div class="pill">Mon Profil</div>
+        <h1>Réglages du compte</h1>
+    </section>
 
-        <section>
-            <h2>Debug account</h2>
-            <p>Email : {{.Email}}</p>
-            <p>Username : {{.Username}}</p>
-            <p>DB id : {{.DBid}}</p>
-        </section>
-        <section class="grid">
-            <article class="card stack">
-                <h2>Nom d'utilisateur</h2>
-                <form action="/editusername" method="post" class="stack">
-                    <label for="editedusername">Nouveau nom d'utilisateur :</label>
-                    <input type="text" id="editedusername" name="editedusername" required>
-                    {{if or (eq .AccountError "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.") (eq .AccountError "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer.") }}
-                        <div class="alert">{{.AccountError}}</div>
-                    {{else if eq .AccountError "Nom d'utilisateur modifié avec succès."}}
-                        <div class="alert success">{{.AccountError}}</div>
-                    {{end}}
-                    <div class="btn-row">
-                        <input type="submit" value="Valider">
-                    </div>
-                </form>
-            </article>
+    <section style="background: #f4f4f4; padding: 10px; border-radius: 8px; margin: 1rem 0; font-size: 0.8rem;">
+        <p><strong>Email actuel :</strong> {{.Email}} | <strong>Username :</strong> {{.Username}}</p>
+    </section>
 
-            <article class="card stack">
-                <h2>Email</h2>
-                <form action="/editemail" method="post" class="stack">
-                    <label for="editedemail">Nouvel email :</label>
-                    <input type="email" id="editedemail" name="editedemail" required>
-                    {{if eq .AccountError "Cet email est déjà utilisé. Veuillez en choisir un autre."}}
-                        <div class="alert">{{.AccountError}}</div>
-                    {{else if eq .AccountError "Email modifié avec succès."}}
-                        <div class="alert success">{{.AccountError}}</div>
-                    {{end}}
-                    <div class="btn-row">
-                        <input type="submit" value="Valider">
-                    </div>
-                </form>
-            </article>
-
-            <article class="card stack">
-                <h2>Mot de passe</h2>
-                <form action="/editpassword" method="post" class="stack">
-                    <label for="editedpassword">Nouveau mot de passe :</label>
-                    <input type="password" id="editedpassword" name="editedpassword" required>
-                    <label for="confeditedpassword">Confirmer le nouveau mot de passe :</label>
-                    <input type="password" id="confeditedpassword" name="confeditedpassword" required>
-                    {{if .AccountError}}
-                        <div class="alert">{{.AccountError}}</div>
-                    {{end}}
-                    <p class="muted">Critère minimum du mot de passe : majuscule, minuscule, chiffre, caractère spécial, sans accent ni espace (12+ caractères).</p>
-
-                    <div class="btn-row">
-                        <input type="submit" value="Valider">
-                    </div>
-                </form>
-            </article>
-
-            <article class="card stack">
-                <h2>Supprimer le compte</h2>
-                <p class="muted">Action définitive, vérifie ton mot de passe.</p>
-                <form action="/deleteaccount" method="post" class="stack">
-                    <label for="deleteaccountpassword">Mot de passe :</label>
-                    <input type="password" id="deleteaccountpassword" name="deleteaccountpassword" required>
-                    {{if eq .AccountError "Mot de passe incorrect. Impossible de supprimer le compte. Veuillez réessayer."}}
-                        <div class="alert">{{.AccountError}}</div>
-                    {{end}}
-                    <div class="btn-row">
-                        <button type="submit" class="btn secondary">Supprimer</button>
-                    </div>
-                </form>
-            </article>
-        </section>
-            <form action="/logout" method="post" class="btn-row">
-                <button type="submit" class="btn secondary">Logout</button>
+    <section class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        
+        <article class="card stack">
+            <h2>Nom d'utilisateur</h2>
+            <form action="/editusername" method="post" class="stack">
+                <label for="editedusername">Nouveau nom d'utilisateur :</label>
+                <input type="text" id="editedusername" name="editedusername" placeholder="{{.Username}}" required>
+                
+                {{if or (eq .AccountError "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.") (eq .AccountError "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer.") }}
+                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
+                {{else if eq .AccountError "Nom d'utilisateur modifié avec succès."}}
+                    <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
+                {{end}}
+                
+                <div class="btn-row">
+                    <input type="submit" value="Mettre à jour" class="btn-black">
+                </div>
             </form>
-    </main>
-</body>
-</html>
+        </article>
+
+        <article class="card stack">
+            <h2>Email</h2>
+            <form action="/editemail" method="post" class="stack">
+                <label for="editedemail">Nouvel email :</label>
+                <input type="email" id="editedemail" name="editedemail" placeholder="{{.Email}}" required>
+                
+                {{if eq .AccountError "Cet email est déjà utilisé. Veuillez en choisir un autre."}}
+                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
+                {{else if eq .AccountError "Email modifié avec succès."}}
+                    <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
+                {{end}}
+                
+                <div class="btn-row">
+                    <input type="submit" value="Mettre à jour" class="btn-black">
+                </div>
+            </form>
+        </article>
+
+        <article class="card stack">
+            <h2>Sécurité</h2>
+            <form action="/editpassword" method="post" class="stack">
+                <label for="editedpassword">Nouveau mot de passe :</label>
+                <input type="password" id="editedpassword" name="editedpassword" required>
+                
+                <label for="confeditedpassword">Confirmation :</label>
+                <input type="password" id="confeditedpassword" name="confeditedpassword" required>
+                
+                {{if and (.AccountError) (not (or (eq .AccountError "Nom d'utilisateur modifié avec succès.") (eq .AccountError "Email modifié avec succès.")))}}
+                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
+                {{end}}
+                
+                <div class="btn-row">
+                    <input type="submit" value="Changer le mot de passe" class="btn-black">
+                </div>
+            </form>
+        </article>
+
+        <article class="card stack" style="border: 1px solid #ff4d4d22;">
+            <h2 style="color: #ff4d4d;">Zone Dangereuse</h2>
+            <p class="muted">La suppression est irréversible.</p>
+            <form action="/deleteaccount" method="post" class="stack">
+                <label for="deleteaccountpassword">Confirme avec ton mot de passe :</label>
+                <input type="password" id="deleteaccountpassword" name="deleteaccountpassword" required>
+                
+                {{if eq .AccountError "Mot de passe incorrect. Impossible de supprimer le compte. Veuillez réessayer."}}
+                    <div class="alert" style="color: #ff4d4d;">{{.AccountError}}</div>
+                {{end}}
+                
+                <div class="btn-row">
+                    <button type="submit" class="btn secondary" style="background: #ff4d4d; color: white; border: none;">Supprimer le compte</button>
+                </div>
+            </form>
+        </article>
+    </section>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <form action="/logout" method="post">
+            <button type="submit" class="btn-logout" style="background: none; border: 1px solid #ccc; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Se déconnecter</button>
+        </form>
+    </div>
+</main>
+{{template "footer" .}}

@@ -3,42 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <title>Inscription</title>
 </head>
-<body>
-    <main class="auth-shell">
-        <section class="card stack auth-card">
+<body class="auth-body">
+    <main class="auth-page">
+        <div class="brand-logo">
+            <img src="/assets/logo.png" alt="Crak'Hot">
+        </div>
+
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <a href="/login" class="tab inactive">Se connecter</a>
+                <div class="tab active">S'inscrire</div>
+            </div>
+        </div>
+        <!-- <section class="card stack auth-card">
             <div class="pill"></div>
             <h1>Inscription</h1>
-            <p class="muted">Crée ton compte et rejoins tes amis.</p>
+            <p class="muted">Crée ton compte et rejoins tes amis.</p> -->
 
-            <form action="/checkregister" method="post" class="stack">
+            <form action="/checkregister" method="post" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Nom d'utilisateur :</label>
+                    <input type="text" id="username" name="username"  placeholder="Votre pseudo"
+                        value="{{if .AccountError}}{{.Username}}{{end}}" required>
+                </div>
 
+                <div class="form-group">
+                    <label for="email">E-mail :</label>
+                    <input type="email" id="email" name="email" placeholder="votre@email.com"
+                    value="{{if .AccountError}}{{.Email}}{{end}}" required>
+                </div>
 
-                <label for="username">Nom d'utilisateur :</label>
-                <input type="text" id="username" name="username" required value="{{if .AccountError}}{{.Username}}{{end}}">
+                <div class="form-group">
+                    <label for="password">Mot de passe :</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
 
-                <label for="email">E-mail :</label>
-                <input type="email" id="email" name="email" required value="{{if .AccountError}}{{.Email}}{{end}}">
+                <div class="form-group">
+                    <label for="confpassword">Confirmer le mot de passe :</label>
+                    <input type="password" id="confpassword" name="confpassword" placeholder="••••••••" required>
+                </div>
 
-                <label for="password">Mot de passe :</label>
-                <input type="password" id="password" name="password" required>
+                <div class="password-info">
+                    <div class="tooltip-container">
+                        <span class="info-icon">!</span>
+                        <span class="tooltip-text">
+                            <strong>Critères du mot de passe :</strong><br>
+                            • 12 caractères minimum<br>
+                            • Majuscule & Minuscule<br>
+                            • Chiffre & Caractère spécial<br>
+                            • Sans accent ni espace
+                        </span>
+                    </div>
+                    <span class="info-label">Exigences de sécurité</span>
+                </div>
 
-                <label for="confpassword">Confirmer le mot de passe :</label>
-                <input type="password" id="confpassword" name="confpassword" required>
+                    {{if .AccountError}}
+                        <div class="alert" style="color: #ff4d4d; margin-bottom: 15px; font-weight: 600;">
+                            {{.AccountError}}
+                        </div>
+                    {{end}}
 
-                <p class="muted">Critère minimum du mot de passe : majuscule, minuscule, chiffre, caractère spécial, sans accent ni espace (12+ caractères).</p>
-
-                {{if .AccountError}}
-                    <div class="alert">{{.AccountError}}</div>
-                {{end}}
-
-                <input type="submit" value="S'inscrire">
-            </form>
-
-            <form action="/login" method="post" class="btn-row">
-                <button type="submit" class="btn secondary">J'ai déjà un compte</button>
+                <button type="submit" class="btn-black">S'inscrire</button>
             </form>
         </section>
     </main>
