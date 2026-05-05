@@ -1,0 +1,40 @@
+{{ template "header" . }}
+
+<main class="container">
+    <div style="margin-bottom: 30px; border-left: 5px solid #ff4500; padding-left: 15px;">
+        <h1 style="color: #fff; margin: 0; font-size: 2rem;">Coup de Coeur</h1>
+        <p style="color: #888; margin: 5px 0 0 0;">Le sujet le plus populaire de la communauté.</p>
+    </div>
+
+    {{ if eq .Post.Titre "Pas encore de favori" }}
+        <div style="text-align: center; padding: 50px; color: #666;">
+            <i class="fa-solid fa- pepper-hot" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+            <p>Aucun post n'a encore reçu de piment d'approbation.</p>
+        </div>
+    {{ else }}
+        <article style="background: #1a1a1a; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <div style="padding: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                    <h2 style="color: #ff4500; margin: 0; font-size: 1.5rem;">{{.Post.Titre}}</h2>
+                    <span style="background: rgba(255, 69, 0, 0.2); color: #ff4500; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">
+                        <i class="fa-solid fa-fire"></i> {{.Post.LikeCount}} likes
+                    </span>
+                </div>
+
+                <p style="color: #ddd; line-height: 1.6; font-size: 1.1rem; white-space: pre-wrap;">{{.Post.Contenu}}</p>
+
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="color: #888; font-size: 0.9rem;">
+                        Par <strong>{{.Post.Auteur}}</strong> <span style="margin: 0 5px;">•</span> {{.Post.Date}}
+                    </div>
+                    <a href="/post?id={{.Post.ID}}" class="btn-register" style="text-decoration: none; padding: 8px 20px;">
+                        Lire la suite
+                    </a>
+                </div>
+            </div>
+        </article>
+    {{ end }}
+</main>
+
+{{ template "footer" . }}
+

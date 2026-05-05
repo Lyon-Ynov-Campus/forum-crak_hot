@@ -14,10 +14,13 @@
 
     <nav class="navbar">
         <div class="nav-links">
-            <a href="/" class="{{if eq .Page "home"}}active{{end}}">ACCUEIL</a>
-            <a href="/reseau" class="{{if eq .Page "reseau"}}active{{end}}">RESEAU</a>
-            <a href="/recherche" class="{{if eq .Page "recherche"}}active{{end}}">RECHERCHE</a>
+            <a href="{{if .IsConnected}}/forum{{else}}/{{end}}" class="nav-link {{if eq .Page "home"}}active{{end}}">ACCUEIL</a>
+            
+            <a href="/reseau" class="nav-link {{if eq .Page "reseau"}}active{{end}}">RESEAU</a>
+            
+            <a href="/coup-de-coeur" class="nav-link {{if eq .Page "heart"}}active{{end}}">COUP DE COEUR</a>
         </div>
+
         
         <div class="search-bar-container">
             <input type="text" placeholder="Rechercher un sujet ou un piment..." class="search-input">
@@ -39,7 +42,7 @@
                         <i class="fa-solid fa-power-off"></i>
                     </a>
                 </div>
-                {{else}}
+            {{else}}
                 <a href="/login" class="btn-login-text">Se connecter</a>
                 <a href="/register" class="btn-register">S'inscrire</a>
             {{end}}

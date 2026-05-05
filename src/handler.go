@@ -27,6 +27,7 @@ func GetUserFromSession(r *http.Request) *UserInfos {
 		fmt.Println("Debug Auth:", err)
 		return &UserInfos{Username: "Invité", IsConnected: false}
 	}
+
 	user.IsConnected = true
 	return &user
 }
@@ -72,7 +73,7 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		Page string
 	}{
 		UserInfos: user,
-		Page:      "forum",
+		Page:      "home",
 	}
 
 	tmpl.ExecuteTemplate(w, "forum.html", data)
@@ -93,7 +94,7 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		Title:     displayTitle,
 		UserInfos: user,
-		Page:      "reseau",
+		Page:      "category", // Aucune bouton du menu principal ne sera en dégradé
 	}
 
 	tmpl, err := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
@@ -102,6 +103,75 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tmpl.ExecuteTemplate(w, "category.html", data)
+}
+
+func NetworkHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	user := GetUserFromSession(r)
+
+	data := struct {
+		*UserInfos
+		Page string
+	}{
+		UserInfos: user,
+		Page:      "reseau",
+	}
+
+	tmpl, err := template.ParseFiles("pages/reseau.html", "pages/header.html", "pages/footer.html")
+	if err != nil {
+		fmt.Println("Erreur template:", err)
+		return
+	}
+	tmpl.ExecuteTemplate(w, "reseau.html", data)
+}
+
+func HeartHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	user := GetUserFromSession(r)
+
+	type HeartPost struct {
+		ID        int
+		Titre     string
+		Contenu   string
+		LikeCount int
+		Date      string
+		Auteur    string
+	}
+
+	var hp HeartPost
+
+	query := `
+    SELECT p.id, p.titre, p.contenu, p.date_publication, u.username, COUNT(l.id) as total_likes
+    FROM Post p
+    LEFT JOIN Like l ON p.id = l.post_id
+    LEFT JOIN Users u ON p.user_id = u.id
+    GROUP BY p.id
+    ORDER BY total_likes DESC, p.date_publication DESC
+    LIMIT 1`
+
+	err := db.QueryRow(query).Scan(&hp.ID, &hp.Titre, &hp.Contenu, &hp.Date, &hp.Auteur, &hp.LikeCount)
+
+	if err != nil {
+		hp = HeartPost{Titre: "Pas encore de favori", Contenu: "Faites vivre le forum pour voir apparaître un coup de cœur !"}
+	}
+
+	tmpl, err := template.ParseFiles("pages/heart.html", "pages/header.html", "pages/footer.html")
+	if err != nil {
+		fmt.Println("Erreur template:", err)
+		return
+	}
+
+	data := struct {
+		*UserInfos
+		Page string
+		Post HeartPost
+	}{
+		UserInfos: user,
+		Page:      "heart",
+		Post:      hp,
+	}
+
+	tmpl.ExecuteTemplate(w, "heart.html", data)
 }
 
 func ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
