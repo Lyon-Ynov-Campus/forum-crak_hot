@@ -1,6 +1,7 @@
 package forum
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -15,27 +16,29 @@ func checkPasswordCharacters(userInfos *UserInfos) {
 	var CPC_hasDigit = regexp.MustCompile(`[0-9]`)
 	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\\]^_{|}~]`)
 
-	if !allowedCharacters.MatchString(userInfos.Password) || !CPC_hasUpper.MatchString(userInfos.Password) || !CPC_hasLower.MatchString(userInfos.Password) || !CPC_hasDigit.MatchString(userInfos.Password) || !hasSpecial.MatchString(userInfos.Password) {
-		userInfos.AccountError = "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer."
+	if !allowedCharacters.MatchString(userInfos.Password) ||
+		!CPC_hasUpper.MatchString(userInfos.Password) ||
+		!CPC_hasLower.MatchString(userInfos.Password) ||
+		!CPC_hasDigit.MatchString(userInfos.Password) ||
+		!hasSpecial.MatchString(userInfos.Password) {
+		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus. Veuillez réessayer."
 	}
 }
 
 func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
-	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
-	var usernameCharIsOk bool
+	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
+	var usernameCharIsOk = true
 
 	for _, charac := range userInfos.Username {
 		if strings.ContainsRune(checkUsernameChar, charac) {
 			usernameCharIsOk = false
 			break
-		} else {
-			usernameCharIsOk = true
 		}
 	}
 
-	if usernameCharIsOk == false {
-		userInfos.AccountError = "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer."
+	if !usernameCharIsOk {
+		userInfos.AccountError = "Le seul caractère spécial autorisé pour le nom d'utilisateur est _ . Veuillez réessayer."
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
@@ -43,7 +46,7 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 	}
 
 	checkPasswordCharacters(userInfos)
-	if userInfos.AccountError == "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer." {
+	if userInfos.AccountError != "" {
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
@@ -51,7 +54,7 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 	}
 
 	if len(userInfos.Password) < 12 {
-		userInfos.AccountError = "La taille du mot de passe doit être d'au moins 12 caracères. Veuillez réessayer."
+		userInfos.AccountError = "La taille du mot de passe doit être d'au moins 12 caractères."
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
@@ -59,7 +62,7 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 	}
 
 	if userInfos.Password != userInfos.ConfPassword {
-		userInfos.AccountError = "Les mots de passe ne correspondent pas. Veuillez réessayer."
+		userInfos.AccountError = "Les mots de passe ne correspondent pas."
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
@@ -71,13 +74,13 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		panic(err)
 	}
 
-	_, err = db.Exec("INSERT INTO Users (username, email, password_hash) VALUES (?, ?, ?)", userInfos.Username, userInfos.Email, string(password_hash))
+	res, err := db.Exec("INSERT INTO Users (username, email, password_hash) VALUES (?, ?, ?)", userInfos.Username, userInfos.Email, string(password_hash))
 	if err != nil {
 		errMsg := err.Error()
-		if regexp.MustCompile(`(?i)email`).MatchString(errMsg) && regexp.MustCompile(`(?i)unique`).MatchString(errMsg) {
-			userInfos.AccountError = "Cet email est déjà utilisé. Veuillez en choisir un autre."
-		} else if regexp.MustCompile(`(?i)username`).MatchString(errMsg) && regexp.MustCompile(`(?i)unique`).MatchString(errMsg) {
-			userInfos.AccountError = "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre."
+		if strings.Contains(errMsg, "email") && strings.Contains(errMsg, "unique") {
+			userInfos.AccountError = "Cet email est déjà utilisé."
+		} else if strings.Contains(errMsg, "username") && strings.Contains(errMsg, "unique") {
+			userInfos.AccountError = "Ce nom d'utilisateur est déjà utilisé."
 		} else {
 			userInfos.AccountError = errMsg
 		}
@@ -86,54 +89,58 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
 	}
-	userInfos.AccountError = ""
-	db.QueryRow("SELECT id FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
+
+	lastID, _ := res.LastInsertId()
+	token := GenerateToken(userInfos.Email)
+	db.Exec("INSERT INTO Session (user_id, token) VALUES (?, ?)", lastID, token)
+
 	http.SetCookie(w, &http.Cookie{
-		Name:  "DBid",
-		Value: userInfos.DBid,
+		Name:     "session_token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
 	})
-	userInfos.DBid = ""
+
+	userInfos.AccountError = ""
 	http.Redirect(w, r, "/forum", http.StatusSeeOther)
-	userInfos.Password = ""
-	userInfos.EditedPassword = ""
-	password_hash = nil
 }
 
 func dataLoginCheck(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	var comparepassword_hash string
+	var userID int
 
 	if strings.Contains(userInfos.Email_Username, "@") {
-		// Le champs de login est un mail
 		userInfos.Email = userInfos.Email_Username
-
-		db.QueryRow("SELECT username FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.Username)
-		db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
+		db.QueryRow("SELECT id, username, password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&userID, &userInfos.Username, &comparepassword_hash)
 	} else {
-		// Le champs de login est un username
 		userInfos.Username = userInfos.Email_Username
-
-		db.QueryRow("SELECT email FROM Users WHERE username=?", userInfos.Email_Username).Scan(&userInfos.Email)
-		db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
+		db.QueryRow("SELECT id, email, password_hash FROM Users WHERE username=?", userInfos.Username).Scan(&userID, &userInfos.Email, &comparepassword_hash)
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.Password)) == nil {
 		userInfos.AccountError = ""
-		db.QueryRow("SELECT id FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
+
+		sessionToken := GenerateToken(userInfos.Email)
+
+		db.Exec("DELETE FROM Session WHERE user_id = ?", userID)
+		_, err := db.Exec("INSERT INTO Session (user_id, token) VALUES (?, ?)", userID, sessionToken)
+		if err != nil {
+			fmt.Println("Erreur création session DB:", err)
+		}
+
 		http.SetCookie(w, &http.Cookie{
-			Name:  "DBid",
-			Value: userInfos.DBid,
+			Name:     "session_token",
+			Value:    sessionToken,
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   86400,
 		})
-		userInfos.DBid = ""
+
 		userInfos.Password = ""
-		userInfos.EditedPassword = ""
-		comparepassword_hash = ""
 		http.Redirect(w, r, "/forum", http.StatusSeeOther)
 	} else {
-		userInfos.AccountError = "Email ou mot de passe incorrect. Veuillez réessayer."
+		userInfos.AccountError = "Email ou mot de passe incorrect."
 		userInfos.Password = ""
-		userInfos.EditedPassword = ""
-		comparepassword_hash = ""
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
-
 }
