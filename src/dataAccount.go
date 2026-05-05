@@ -120,10 +120,10 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 	defer db.Close()
 
 	var comparepassword_hash string
-	db.QueryRow("SELECT password_hash FROM users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
+	db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.DeleteAccountPassword)) == nil {
-		_, err = db.Exec("DELETE FROM users WHERE email=?", userInfos.Email)
+		_, err = db.Exec("DELETE FROM Users WHERE email=?", userInfos.Email)
 		if err != nil {
 			panic(err)
 		}

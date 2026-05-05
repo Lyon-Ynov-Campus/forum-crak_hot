@@ -65,6 +65,25 @@ func StartServer() {
 		deleteaccountHandler(w, r, &userInfos)
 	})
 
+	// action user handlers
+
+	/*http.HandleFunc("/postCreate", postCreate)
+	http.HandleFunc("/postUpdate", postUpdate)
+	http.HandleFunc("/postDelete", postDelete)
+	http.HandleFunc("/myPosts", myPosts)
+	http.HandleFunc("/post", seeOnePost)
+	http.HandleFunc("/posts", seeAllPosts)
+
+	http.HandleFunc("/comCreate", comCreate)
+	http.HandleFunc("/comUpdate", comUpdate)
+	http.HandleFunc("/comDelete", comDelete)
+
+	http.HandleFunc("/like", Like)
+	http.HandleFunc("/unLike", unLike)
+
+	http.HandleFunc("/seeUser", seeUser)
+	http.HandleFunc("/seeAllUsers", seeAllUsers)*/
+
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
