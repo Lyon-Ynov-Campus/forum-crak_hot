@@ -100,7 +100,9 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		Path:     "/",
 		HttpOnly: true,
 	})
-
+	userInfos.Password = ""
+	userInfos.EditedPassword = ""
+	password_hash = nil
 	userInfos.AccountError = ""
 	http.Redirect(w, r, "/forum", http.StatusSeeOther)
 }
