@@ -27,17 +27,21 @@
         <div class="auth-buttons">
             {{if .IsConnected}}
                 <div class="user-profile-header">
-                    <span class="user-pseudo">{{.Username}}</span>
-                    <div class="user-avatar">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-                    <a href="/logout" class="logout-icon">
+                    <a href="/editaccount" class="user-profile-link" title="Paramètres du compte" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
+                        <span class="user-pseudo" style="margin-right: 10px;">{{.Username}}</span>
+                        
+                        <div class="user-avatar" style="cursor: pointer; transition: transform 0.2s;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="/logout" class="logout-icon" title="Déconnexion" style="margin-left: 15px;">
                         <i class="fa-solid fa-power-off"></i>
                     </a>
                 </div>
                 {{else}}
-            <a href="/login" class="btn-login-text">Se connecter</a>
-            <a href="/register" class="btn-register">S'inscrire</a>
+                <a href="/login" class="btn-login-text">Se connecter</a>
+                <a href="/register" class="btn-register">S'inscrire</a>
             {{end}}
         </div>
     </nav>

@@ -21,6 +21,7 @@ type UserInfos struct {
 	AccountError          string
 	Status                string
 	DBid                  string
+	IsConnected           bool
 }
 
 var userInfos UserInfos
