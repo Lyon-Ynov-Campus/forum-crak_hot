@@ -31,7 +31,11 @@
                         <span class="user-pseudo" style="margin-right: 10px;">{{.Username}}</span>
                         
                         <div class="user-avatar" style="cursor: pointer; transition: transform 0.2s;">
-                            <i class="fa-solid fa-user"></i>
+                        {{if .LoadedPP}}
+                            <img src="{{.LoadedPP}}" alt="Photo de profil" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 0.5px solid #ccc;" />
+                        {{else}}
+                            <img src="/static/pp/defaultPP.png" alt="Photo de profil par défaut" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 0.5px solid #ccc;" />
+                        {{end}}
                         </div>
                     </a>
                     

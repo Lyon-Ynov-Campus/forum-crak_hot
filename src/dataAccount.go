@@ -49,29 +49,6 @@ func getUserPP(email string) (string, error) {
 	return ppURL, nil
 }
 
-func updateUserPP(email string, ppURL string) error {
-	db, err := OpenDB()
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
-	return err
-}
-
-func getUserPP(email string) (string, error) {
-	db, err := OpenDB()
-	if err != nil {
-		return "", err
-	}
-
-	var ppURL string
-	err = db.QueryRow("SELECT photo_profil FROM Users WHERE email = ?", email).Scan(&ppURL)
-	if err != nil {
-		return "", err
-	}
-	return ppURL, nil
-}
-
 func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
 	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"

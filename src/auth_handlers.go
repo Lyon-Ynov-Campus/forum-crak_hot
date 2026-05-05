@@ -83,78 +83,8 @@ func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserI
 		IsConnected: IsConnected(r),
 	}
 
-	tmpl.ExecuteTemplate(w, "account.html", data)
-}
-
-func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	if userInfos.Email == "" {
-		log.Println("Tentative d'upload sans Email")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
-	err := r.ParseMultipartForm(10 << 20) // 10MB max
-	if err != nil {
-		log.Println("Erreur ParseMultipartForm:", err)
-		userInfos.AccountError = "Erreur lors de l'upload."
-		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
-		return
-	}
-	file, handler, err := r.FormFile("addPP")
-	if err != nil {
-		log.Println("Erreur FormFile:", err)
-		userInfos.AccountError = "Erreur lors de la récupération du fichier."
-		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
-		return
-	}
-	defer file.Close()
-
-	ext := strings.ToLower(filepath.Ext(handler.Filename))
-	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
-		userInfos.AccountError = "Format non supporté."
-		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
-		return
-	}
-
-	ppDir := filepath.Join("static", "pp")
-	if _, err := os.Stat(ppDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(ppDir, 0755); err != nil {
-			log.Println("Erreur création dossier static/pp:", err)
-			userInfos.AccountError = "Erreur serveur (dossier)."
-			http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
-			return
-		}
-	}
-
-	// Utilise l'email pour nommer le fichier (remplace @ et . pour éviter les soucis)
-	cookie, err := r.Cookie("DBid")
-	fileNamePart := "PPofNum" + cookie.Value
-	filename := fmt.Sprintf("%s%s", fileNamePart, ext)
-	path := filepath.Join(ppDir, filename)
-
-	removeOldPP(userInfos)
-
-	out, err := os.Create(path)
-	if err != nil {
-		log.Println("Erreur création fichier:", err)
-		userInfos.AccountError = "Erreur lors de la sauvegarde."
-		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
-		return
-	}
-	defer out.Close()
-	_, err = io.Copy(out, file)
-	if err != nil {
-		log.Printf("Erreur template account : %v", err)
-		return
-	}
-	data := struct {
-		*UserInfos
-		IsConnected bool
-	}{
-		UserInfos:   userInfos,
-		IsConnected: IsConnected(r),
-	}
-
-	tmpl.ExecuteTemplate(w, "account.html", data)
+	tmpl.Execute(w, data)
+	//tmpl.ExecuteTemplate(w, "account.html", data)
 }
 
 func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
