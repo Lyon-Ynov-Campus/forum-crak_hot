@@ -5,7 +5,9 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func GetUserFromSession(r *http.Request) *UserInfos {
@@ -146,4 +148,186 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge: -1,
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// Gestion action user
+
+func GetUserID(r *http.Request) int { //func faite par IA aide a recup ID du user dans BDD pr chaque etape des handlers
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		return 0
+	}
+
+	var id int
+	err := db.QueryRow("SELECT id FROM Users WHERE email = ?", user.Email).Scan(&id)
+	if err != nil {
+		fmt.Println("err GetUserID", err)
+		return 0
+	}
+	return id
+}
+
+func postCreate(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r) //recup info user
+
+	if r.Method == http.MethodGet { //affiche forualire si arrvie sur la page
+		tmpl, _ := template.ParseFiles("pages/postCreate.html", "pages/header.html", "pages/footer.html")
+		data := struct {
+			*UserInfos
+			Page string
+		}{
+			UserInfos: user,         //affiche pseudo dans header
+			Page:      "postCreate", //active bon btn dans la nav
+		}
+		tmpl.ExecuteTemplate(w, "postCreate.html", data)
+		return
+	}
+
+	if r.Method == http.MethodPost { //si form envoyer
+		titre := r.FormValue("titre") //recup titre etc
+		contenu := r.FormValue("contenu")
+		categorie := r.FormValue("categorie")
+		date := time.Now().Format("2006-01-02") //rev src codystudy.net
+
+		userID := GetUserID(r) //recup id du user
+
+		CreatePost(titre, contenu, categorie, date, userID) //créer le post
+
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+	}
+}
+
+func postUpdate(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+
+	postID, _ := strconv.Atoi(r.URL.Query().Get("id")) //recup id du post ds URL
+	post, err := GetPostByID(postID)                   //recup post contenu dnas BDD
+
+	if err != nil { //si psot existe pas
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+		return
+	}
+
+	if post.UserID != GetUserID(r) { //verif si bien auteeur car server public
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		tmpl, _ := template.ParseFiles("pages/postUpdate.html", "pages/header.html", "pages/footer.html")
+		data := struct {
+			Post Post
+			*UserInfos
+			Page string
+		}{
+			Post:      post, //pre remplir le form
+			UserInfos: user, //info user pour header car nom a coté de pp revoir figma
+			Page:      "postUpdate",
+		}
+		tmpl.ExecuteTemplate(w, "postUpdate.html", data)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		newTitre := r.FormValue("titre")
+		newContenu := r.FormValue("contenu")
+		newCategorie := r.FormValue("categorie")
+
+		UpdatePost(postID, newTitre, newContenu, newCategorie)
+
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+	}
+}
+
+func postDelete(w http.ResponseWriter, r *http.Request) {
+	postID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	post, err := GetPostByID(postID)
+	if err != nil {
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+		return
+	}
+
+	// seule sécurité nécessaire : vérifier que c’est l’auteur
+	if post.UserID != GetUserID(r) {
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+		return
+	}
+
+	DeletePost(postID)
+	http.Redirect(w, r, "/posts", http.StatusSeeOther)
+}
+
+func seeOnePost(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+
+	postID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	post, err := GetPostByID(postID)
+	if err != nil {
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+		return
+	}
+
+	comments, _ := GetComByPostID(postID)
+	likeCount, _ := CountLikes(postID)
+	comCount, _ := CountCom(postID)
+	authorPseudo, _ := GetPseudoByUserID(post.UserID)
+
+	tmpl, _ := template.ParseFiles("pages/post.html", "pages/header.html", "pages/footer.html")
+	data := struct {
+		Post      Post
+		Comments  []Com
+		LikeCount int
+		ComCount  int
+		Author    string
+		*UserInfos
+		Page string
+	}{
+		Post:      post,
+		Comments:  comments,
+		LikeCount: likeCount,
+		ComCount:  comCount,
+		Author:    authorPseudo,
+		UserInfos: user,
+		Page:      "post",
+	}
+
+	tmpl.ExecuteTemplate(w, "post.html", data)
+}
+
+func seeAllPosts(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+
+	posts, _ := GetAllPosts()
+
+	tmpl, _ := template.ParseFiles("pages/posts.html", "pages/header.html", "pages/footer.html")
+	data := struct {
+		Posts []Post
+		*UserInfos
+		Page string
+	}{
+		Posts:     posts,
+		UserInfos: user,
+		Page:      "posts",
+	}
+
+	tmpl.ExecuteTemplate(w, "posts.html", data)
+}
+
+func myPosts(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r) //recup user
+
+	posts, _ := GetUserPosts(GetUserID(r)) //recuperer SES posts
+
+	tmpl, _ := template.ParseFiles("pages/myPosts.html", "pages/header.html", "pages/footer.html")
+	data := struct {
+		Posts []Post
+		*UserInfos
+		Page string
+	}{
+		Posts:     posts, //ses posts
+		UserInfos: user,  //info user
+		Page:      "myPosts",
+	}
+
+	tmpl.ExecuteTemplate(w, "account.html", data)
 }

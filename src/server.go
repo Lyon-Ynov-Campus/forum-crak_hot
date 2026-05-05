@@ -72,6 +72,25 @@ func StartServer() {
 		deleteaccountHandler(w, r, &userInfos)
 	})
 
+	// route gestion action user
+	//post
+	http.HandleFunc("/postCreate", postCreate)
+	http.HandleFunc("/postUpdate", postUpdate)
+	http.HandleFunc("/postDelete", postDelete)
+	http.HandleFunc("/post", seeOnePost)   //post indeivudel du membre
+	http.HandleFunc("/posts", seeAllPosts) //tout les post afficher
+	http.HandleFunc("/myPosts", myPosts)   //tout MES psot afficher
+	// com
+	/*http.HandleFunc("/comCreate", comCreate)
+	http.HandleFunc("/comUpdate", comUpdate)
+	http.HandleFunc("/comDelete", comDelete)
+	//like
+	http.HandleFunc("/like", Like)
+	http.HandleFunc("/unLike", unLike)
+	//reseua
+	http.HandleFunc("/seeUser", seeUser)         //ds recherche reseau quand on clique btn voir proifl
+	http.HandleFunc("/seeAllUsers", seeAllUsers) //ds recherche liste des membres de la recherche
+	*/
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
