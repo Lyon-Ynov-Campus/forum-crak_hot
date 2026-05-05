@@ -64,19 +64,28 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 }
 
 func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	user := GetUserFromSession(r)
+
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	tmpl, err := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
 	if err != nil {
 		log.Printf("Erreur template account : %v", err)
 		return
 	}
+
 	data := struct {
 		*UserInfos
-		IsConnected bool
+		Page string
 	}{
-		UserInfos:   userInfos,
-		IsConnected: IsConnected(r),
+		UserInfos: user,
+		Page:      "account",
 	}
 
+	data.UserInfos.AccountError = userInfos.AccountError
 	tmpl.ExecuteTemplate(w, "account.html", data)
 }
 
