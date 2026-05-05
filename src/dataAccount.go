@@ -3,6 +3,7 @@ package forum
 import (
 	"database/sql"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -20,6 +21,29 @@ func checkEditedPasswordCharacters(UserInfos) {
 	if !allowedCharacters.MatchString(userInfos.EditedPassword) || !CPC_hasUpper.MatchString(userInfos.EditedPassword) || !CPC_hasLower.MatchString(userInfos.EditedPassword) || !CPC_hasDigit.MatchString(userInfos.EditedPassword) || !hasSpecial.MatchString(userInfos.EditedPassword) {
 		userInfos.AccountError = "La composition du mot de passe de respecte pas les critères attendus. Veuillez réessayer."
 	}
+}
+
+func updateUserPP(email string, ppURL string) error {
+	db, err := OpenDB()
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
+	return err
+}
+
+func getUserPP(email string) (string, error) {
+	db, err := OpenDB()
+	if err != nil {
+		return "", err
+	}
+
+	var ppURL string
+	err = db.QueryRow("SELECT photo_profil FROM Users WHERE email = ?", email).Scan(&ppURL)
+	if err != nil {
+		return "", err
+	}
+	return ppURL, nil
 }
 
 func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
@@ -100,7 +124,7 @@ func dataEditPassword(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		panic(err)
 	}
 
-	_, err = db.Exec("UPDATE users SET password_hash=? WHERE email=?", string(editedpassword_hash), userInfos.Email)
+	_, err = db.Exec("UPDATE Users SET password_hash=? WHERE email=?", string(editedpassword_hash), userInfos.Email)
 	if err != nil {
 		panic(err)
 	}
@@ -120,13 +144,27 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 	defer db.Close()
 
 	var comparepassword_hash string
-	db.QueryRow("SELECT password_hash FROM users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
+	db.QueryRow("SELECT password_hash FROM Users WHERE email=?", userInfos.Email).Scan(&comparepassword_hash)
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.DeleteAccountPassword)) == nil {
-		_, err = db.Exec("DELETE FROM users WHERE email=?", userInfos.Email)
+		// Supprime la photo de profil si elle existe
+		if userInfos.LoadedPP != "" && strings.Contains(userInfos.LoadedPP, "/static/pp/") {
+			parts := strings.Split(userInfos.LoadedPP, "/static/pp/")
+			if len(parts) == 2 {
+				oldFile := "static/pp/" + parts[1]
+				os.Remove(oldFile)
+			}
+		}
+
+		_, err = db.Exec("DELETE FROM Users WHERE email=?", userInfos.Email)
 		if err != nil {
 			panic(err)
 		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:  "DBid",
+			Value: "",
+		})
 		userInfos.AccountError = "Compte supprimé avec succès."
 	} else {
 		userInfos.AccountError = "Mot de passe incorrect. Impossible de supprimer le compte. Veuillez réessayer."

@@ -93,10 +93,10 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		Value: userInfos.DBid,
 	})
 	userInfos.DBid = ""
-	http.Redirect(w, r, "/forum", http.StatusSeeOther)
 	userInfos.Password = ""
 	userInfos.EditedPassword = ""
 	password_hash = nil
+	http.Redirect(w, r, "/forum", http.StatusSeeOther)
 }
 
 func dataLoginCheck(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {

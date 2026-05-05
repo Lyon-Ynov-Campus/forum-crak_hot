@@ -9,6 +9,17 @@
 </head>
 <body>
     <h1>Forum</h1>
+    <section style="display: flex; align-items: center; gap: 1em; margin-bottom: 1em;">
+        {{if .LoadedPP}}
+            <img src="{{.LoadedPP}}" alt="Photo de profil" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #ccc;" />
+        {{else}}
+            <img src="/static/pp/defaultPP.png" alt="Photo de profil par défaut" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #ccc;" />
+        {{end}}
+        <div>
+            <div><strong>Username :</strong> {{.Username}}</div>
+            <div><strong>Email :</strong> {{.Email}}</div>
+        </div>
+    </section>
     <form action="/editaccount" method="post" class="btn-row">
         <button type="submit" class="btn secondary">Compte</button>
     </form>

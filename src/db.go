@@ -7,6 +7,13 @@ import (
 	_ "github.com/mattn/go-sqlite3" //ps oublier import github.com voir repo soutien
 )
 
+func OpenDB() (*sql.DB, error) {
+	if db == nil {
+		return nil, fmt.Errorf("DB non initialisée")
+	}
+	return db, nil
+}
+
 var db *sql.DB
 
 func InitDB() { //corps debut repo soutien rev

@@ -18,6 +18,8 @@ type UserInfos struct {
 	ConfPassword          string
 	ConfEditedPassword    string
 	DeleteAccountPassword string
+	LoadedPP              string
+	EditedPP              string
 	AccountError          string
 	Status                string
 	DBid                  string
@@ -26,12 +28,14 @@ type UserInfos struct {
 var userInfos UserInfos
 
 func StartServer() {
-
 	//Handlers corps principal
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		homeHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/forum", func(w http.ResponseWriter, r *http.Request) {
+		if userInfos.Email != "" {
+			userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+		}
 		forumHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +54,9 @@ func StartServer() {
 		logoutHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/editaccount", func(w http.ResponseWriter, r *http.Request) {
+		if userInfos.Email != "" {
+			userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+		}
 		editaccountHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/editusername", func(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +70,12 @@ func StartServer() {
 	})
 	http.HandleFunc("/deleteaccount", func(w http.ResponseWriter, r *http.Request) {
 		deleteaccountHandler(w, r, &userInfos)
+	})
+	http.HandleFunc("/addPP", func(w http.ResponseWriter, r *http.Request) {
+		addPPHandler(w, r, &userInfos)
+	})
+	http.HandleFunc("/deletePP", func(w http.ResponseWriter, r *http.Request) {
+		deletePPHandler(w, r, &userInfos)
 	})
 
 	fs := http.FileServer(http.Dir("static"))

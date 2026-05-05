@@ -1,9 +1,14 @@
 package forum
 
 import (
+	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 func loginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
@@ -49,7 +54,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 		"", "", "", "", "Déconnecté avec succès."
 	http.SetCookie(w, &http.Cookie{
 		Name:  "DBid",
-		Value: userInfos.DBid,
+		Value: "",
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -61,6 +66,110 @@ func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserI
 	}
 
 	tmpl.Execute(w, userInfos)
+}
+
+func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	if userInfos.Email == "" {
+		log.Println("Tentative d'upload sans Email")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	err := r.ParseMultipartForm(10 << 20) // 10MB max
+	if err != nil {
+		log.Println("Erreur ParseMultipartForm:", err)
+		userInfos.AccountError = "Erreur lors de l'upload."
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+	file, handler, err := r.FormFile("addPP")
+	if err != nil {
+		log.Println("Erreur FormFile:", err)
+		userInfos.AccountError = "Erreur lors de la récupération du fichier."
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(handler.Filename))
+	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
+		userInfos.AccountError = "Format non supporté."
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	ppDir := filepath.Join("static", "pp")
+	if _, err := os.Stat(ppDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(ppDir, 0755); err != nil {
+			log.Println("Erreur création dossier static/pp:", err)
+			userInfos.AccountError = "Erreur serveur (dossier)."
+			http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+			return
+		}
+	}
+
+	// Utilise l'email pour nommer le fichier (remplace @ et . pour éviter les soucis)
+	cookie, err := r.Cookie("DBid")
+	fileNamePart := "PPofNum" + cookie.Value
+	filename := fmt.Sprintf("%s%s", fileNamePart, ext)
+	path := filepath.Join(ppDir, filename)
+
+	removeOldPP(userInfos)
+
+	out, err := os.Create(path)
+	if err != nil {
+		log.Println("Erreur création fichier:", err)
+		userInfos.AccountError = "Erreur lors de la sauvegarde."
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+	defer out.Close()
+	_, err = io.Copy(out, file)
+	if err != nil {
+		log.Println("Erreur copie fichier:", err)
+		userInfos.AccountError = "Erreur lors de la copie."
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	ppURL := fmt.Sprintf("http://localhost:8080/static/pp/%s", filename)
+	userInfos.EditedPP = ppURL
+	userInfos.LoadedPP = ppURL
+
+	err = updateUserPP(userInfos.Email, ppURL)
+	if err != nil {
+		log.Println("Erreur updateUserPP:", err)
+		userInfos.AccountError = "Erreur lors de la mise à jour de la base de données."
+	} else {
+		userInfos.AccountError = "Photo de profil mise à jour."
+	}
+	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+}
+
+func removeOldPP(userInfos *UserInfos) {
+	if userInfos.LoadedPP != "" && strings.Contains(userInfos.LoadedPP, "/static/pp/") {
+		parts := strings.Split(userInfos.LoadedPP, "/static/pp/")
+		if len(parts) == 2 {
+			oldFile := filepath.Join("static", "pp", parts[1])
+			os.Remove(oldFile)
+		}
+	}
+}
+
+func deletePPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	if userInfos.Email == "" {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	removeOldPP(userInfos)
+	userInfos.LoadedPP = ""
+	userInfos.EditedPP = ""
+	err := updateUserPP(userInfos.Email, "")
+	if err != nil {
+		userInfos.AccountError = "Erreur lors de la suppression de la photo."
+	} else {
+		userInfos.AccountError = "Photo de profil supprimée."
+	}
+	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 }
 
 func editusernameHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
@@ -101,10 +210,6 @@ func editpasswordHandler(w http.ResponseWriter, r *http.Request, userInfos *User
 			userInfos.Email,
 			userInfos.EditedEmail =
 			"", "", "", ""
-		http.SetCookie(w, &http.Cookie{
-			Name:  "DBid",
-			Value: userInfos.DBid,
-		})
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
@@ -121,10 +226,6 @@ func deleteaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *Use
 			userInfos.Email,
 			userInfos.EditedEmail =
 			"", "", "", ""
-		http.SetCookie(w, &http.Cookie{
-			Name:  "DBid",
-			Value: userInfos.DBid,
-		})
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
