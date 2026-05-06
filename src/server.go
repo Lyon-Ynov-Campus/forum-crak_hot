@@ -81,16 +81,18 @@ func StartServer() {
 	http.HandleFunc("/posts", seeAllPosts) //tout les post afficher
 	http.HandleFunc("/myPosts", myPosts)   //tout MES psot afficher
 	// com
-	/*http.HandleFunc("/comCreate", comCreate)
+	http.HandleFunc("/comCreate", comCreate)
 	http.HandleFunc("/comUpdate", comUpdate)
 	http.HandleFunc("/comDelete", comDelete)
+	http.HandleFunc("/myComs", seeMyComs)
+
 	//like
-	http.HandleFunc("/like", Like)
-	http.HandleFunc("/unLike", unLike)
+	http.HandleFunc("/likePost", likePost)
+	http.HandleFunc("/unLikePost", unLikePost)
 	//reseua
 	http.HandleFunc("/seeUser", seeUser)         //ds recherche reseau quand on clique btn voir proifl
 	http.HandleFunc("/seeAllUsers", seeAllUsers) //ds recherche liste des membres de la recherche
-	*/
+
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 

@@ -383,6 +383,19 @@ func CountCom(postID int) (int, error) {
 	return count, err
 }
 
+func GetComByID(id int) (Com, error) {
+	var c Com
+
+	row := db.QueryRow(`
+        SELECT id, contenu, date_com, user_id, post_id
+        FROM Commentaire
+        WHERE id = ?
+    `, id)
+
+	err := row.Scan(&c.ID, &c.Contenu, &c.DateCom, &c.UserID, &c.PostID)
+	return c, err
+}
+
 //PARTIE Like
 
 func LikePost(userID, postID int) error {
