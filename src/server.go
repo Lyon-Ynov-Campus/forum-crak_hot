@@ -42,6 +42,7 @@ func StartServer() {
 	http.HandleFunc("/categories/", CategoryHandler)
 	http.HandleFunc("/forgot-password", ForgotPasswordPage)
 	http.HandleFunc("/send-reset", SendResetLink)
+	http.HandleFunc("/reset-password", ResetPasswordHandler)
 	http.HandleFunc("/reseau", NetworkHandler)
 	http.HandleFunc("/coup-de-coeur", HeartHandler)
 

@@ -145,7 +145,6 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 			MaxAge: -1,
 		})
 		userInfos.AccountError = "Compte supprimé avec succès."
-		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
 		userInfos.AccountError = "Mot de passe incorrect. Impossible de supprimer le compte."
 		userInfos.DeleteAccountPassword = ""

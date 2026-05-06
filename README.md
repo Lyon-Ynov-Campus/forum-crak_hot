@@ -7,6 +7,6 @@ Note :
 - Suppression de tout lié au user au delete
 - Système mdp oublié
 - erreur un seul endroit dans account
-- cookies
+- Verif le DBid ok dans tout les moyens de connexions
 
 Commit bisard en abc

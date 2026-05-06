@@ -16,12 +16,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	if err != nil {
 		log.Fatal(err)
 	}
+	resetSent := r.URL.Query().Get("reset_sent") == "true"
+	
 	data := struct {
 		*UserInfos
 		IsConnected bool
+		ResetSent   bool
 	}{
 		UserInfos:   userInfos,
 		IsConnected: IsConnected(r),
+		ResetSent:   resetSent,
 	}
 	tmpl.ExecuteTemplate(w, "login.html", data)
 }
@@ -71,6 +75,13 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 
 func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	user := GetUserFromSession(r)
+
+	pp, err := getUserPP(user.Email)
+	if err == nil {
+		user.LoadedPP = pp
+	} else {
+		user.LoadedPP = ""
+	}
 
 	if !user.IsConnected {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -132,8 +143,7 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		}
 	}
 
-	cookie, err := r.Cookie("DBid")
-	fileNamePart := "PPofNum" + cookie.Value
+	fileNamePart := "PPofNum" + userInfos.DBid
 	filename := fmt.Sprintf("%s%s", fileNamePart, ext)
 	path := filepath.Join(ppDir, filename)
 
@@ -155,7 +165,7 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		return
 	}
 
-	ppURL := fmt.Sprintf("http://localhost:8080/static/pp/%s", filename)
+	ppURL := "/static/pp/" + filename
 	userInfos.EditedPP = ppURL
 	userInfos.LoadedPP = ppURL
 

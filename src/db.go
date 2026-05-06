@@ -51,7 +51,7 @@ func CreateDB() { //rev slide 39 soutien pour creer table
 	categorie TEXT NOT NULL,
 	date_publication TEXT NOT NULL,
 	user_id INTEGER NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+	FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 	);
 	`
 
@@ -68,7 +68,7 @@ func CreateDB() { //rev slide 39 soutien pour creer table
 	date_com TEXT NOT NULL,
 	user_id INTEGER NOT NULL,
 	post_id INTEGER NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
 	FOREIGN KEY (post_id) REFERENCES Post(id) ON DELETE CASCADE
 	);
 	`
@@ -101,13 +101,29 @@ func CreateDB() { //rev slide 39 soutien pour creer table
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	token TEXT NOT NULL,
 	user_id INTEGER NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+	FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
 	);
 	` //rev doc datacamp pour ON DELETE CASCADE pour consigne effacer data si compte suppr
 
 	_, err = db.Exec(CreateTableSession)
 	if err != nil {
 		fmt.Println("erreur table session", err)
+		panic(err)
+	}
+
+	CreateTablePasswordReset := `
+	CREATE TABLE IF NOT EXISTS PasswordReset(
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	email TEXT NOT NULL,
+	token TEXT NOT NULL UNIQUE,
+	expiration TEXT NOT NULL,
+	created_at TEXT NOT NULL
+	);
+	`
+
+	_, err = db.Exec(CreateTablePasswordReset)
+	if err != nil {
+		fmt.Println("erreur table password_reset", err)
 		panic(err)
 	}
 

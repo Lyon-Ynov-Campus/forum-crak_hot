@@ -3,18 +3,31 @@
 <main class="auth-body">
     <div class="auth-container">
         <div class="auth-tabs">
-            <div class="tab active" style="width: 100%;">REINITIALISATION</div>
+            <div class="tab active" style="width: 100%;">RÉINITIALISATION DE MOT DE PASSE</div>
         </div>
-        <form action="/send-reset" class="auth-forms" method="POST">
-            <div class="form-group">
-                <label>Email associé au compte :</label>
-                <input type="email" name="email" placeholder="piment@hot.com" required>
+
+        {{if .ResetSent}}
+            <div class="alert success" style="color: #2ecc71; margin-bottom: 15px; font-weight: 600; padding: 15px; background-color: #f0f8f4; border-radius: 8px;">
+                Si cet email existe dans notre système, vous recevrez un lien de réinitialisation. Ce lien expire dans 1 heure.
             </div>
-            <button type="submit">Recevoir le Lien</button>
-            <div class="margin-top: 20px; text-align: center;">
-                <a href="/login" class="btn-login-text" style="font-size: 11px;">Retour à la page de connexion</a>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="/login" class="btn-black">Retour à la page de connexion</a>
             </div>
-        </form>
+        {{else}}
+            <form action="/send-reset" class="auth-forms" method="POST">
+                <div class="form-group">
+                    <label for="email">Email associé au compte :</label>
+                    <input type="email" id="email" name="email" placeholder="piment@hot.com" required>
+                    <p style="font-size: 0.85rem; color: #7f8c8d; margin-top: 8px;">
+                        Entrez l'adresse email associée à votre compte. Si elle existe, vous recevrez un lien pour réinitialiser votre mot de passe.
+                    </p>
+                </div>
+                <button type="submit" class="btn-black">Recevoir le Lien</button>
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="/login" class="btn-login-text" style="font-size: 11px;">Retour à la page de connexion</a>
+                </div>
+            </form>
+        {{end}}
     </div>
 </main>
 
