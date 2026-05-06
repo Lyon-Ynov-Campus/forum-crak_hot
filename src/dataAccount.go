@@ -2,6 +2,7 @@ package forum
 
 import (
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
@@ -23,6 +24,29 @@ func checkEditedPasswordCharacters(userInfos *UserInfos) {
 		!hasSpecial.MatchString(userInfos.EditedPassword) {
 		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus. Veuillez réessayer."
 	}
+}
+
+func updateUserPP(email string, ppURL string) error {
+	db, err := OpenDB()
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
+	return err
+}
+
+func getUserPP(email string) (string, error) {
+	db, err := OpenDB()
+	if err != nil {
+		return "", err
+	}
+
+	var ppURL string
+	err = db.QueryRow("SELECT photo_profil FROM Users WHERE email = ?", email).Scan(&ppURL)
+	if err != nil {
+		return "", err
+	}
+	return ppURL, nil
 }
 
 func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
@@ -99,6 +123,15 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.DeleteAccountPassword)) == nil {
+		// Supprime la photo de profil si elle existe
+		if userInfos.LoadedPP != "" && strings.Contains(userInfos.LoadedPP, "/static/pp/") {
+			parts := strings.Split(userInfos.LoadedPP, "/static/pp/")
+			if len(parts) == 2 {
+				oldFile := "static/pp/" + parts[1]
+				os.Remove(oldFile)
+			}
+		}
+
 		_, err = db.Exec("DELETE FROM Users WHERE email=?", userInfos.Email)
 		if err != nil {
 			panic(err)
@@ -112,7 +145,6 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 			MaxAge: -1,
 		})
 		userInfos.AccountError = "Compte supprimé avec succès."
-		http.Redirect(w, r, "/", http.StatusSeeOther)
 	} else {
 		userInfos.AccountError = "Mot de passe incorrect. Impossible de supprimer le compte."
 		userInfos.DeleteAccountPassword = ""

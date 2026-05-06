@@ -25,6 +25,12 @@
             <h1>Connexion</h1>
             <p class="muted">Connecte-toi ou crée ton compte.</p> -->
 
+            {{if .ResetSent}}
+                <div class="alert success" style="color: #2ecc71; margin-bottom: 15px; font-weight: 600; padding: 15px; background-color: #f0f8f4; border-radius: 8px;">
+                    Si cet email existe, vous devriez recevoir un lien de réinitialisation. Ce lien expire dans 1 heure.
+                </div>
+            {{end}}
+
             <form action="/checklogin" method="post" class="auth-form">
                 {{ $badCreds := eq .AccountError "Email ou mot de passe incorrect. Veuillez réessayer." }}
 

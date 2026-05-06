@@ -5,8 +5,8 @@ First commit
 Note :
 
 - Suppression de tout lié au user au delete
-- ajouter pp
 - Système mdp oublié
 - erreur un seul endroit dans account
+- Verif le DBid ok dans tout les moyens de connexions
 
 Commit bisard en abc

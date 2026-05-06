@@ -100,14 +100,17 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		Path:     "/",
 		HttpOnly: true,
 	})
-
+	db.QueryRow("SELECT id FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
+	userInfos.Password = ""
+	userInfos.EditedPassword = ""
+	password_hash = nil
 	userInfos.AccountError = ""
 	http.Redirect(w, r, "/forum", http.StatusSeeOther)
 }
 
 func dataLoginCheck(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	var comparepassword_hash string
-	var userID int
+	var userID string
 
 	if strings.Contains(userInfos.Email_Username, "@") {
 		userInfos.Email = userInfos.Email_Username
@@ -116,6 +119,7 @@ func dataLoginCheck(w http.ResponseWriter, r *http.Request, userInfos *UserInfos
 		userInfos.Username = userInfos.Email_Username
 		db.QueryRow("SELECT id, email, password_hash FROM Users WHERE username=?", userInfos.Username).Scan(&userID, &userInfos.Email, &comparepassword_hash)
 	}
+	userInfos.DBid = userID
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.Password)) == nil {
 		userInfos.AccountError = ""
