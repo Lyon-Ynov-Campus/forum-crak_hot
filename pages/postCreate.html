@@ -1,0 +1,26 @@
+{{template "header" .}}
+<main class="page container">
+    <section class="card stack" style="margin-top: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
+        <h1 style="color: var(--grad-red);">Dresser une nouvelle table</h1>
+        <form id="create-post-form" action="/postCreate" method="POST" class="stack" style="gap: 1.5rem;">
+            <div class="form-group">
+                <label for="titre">Titre du sujet</label>
+                <input type="text" name="titre" required style="width:100%; padding:10px; background:#111; color:white;">
+            </div>
+            <div class="form-group">
+                <label for="categorie">Catégorie</label>
+                <select name="categorie" style="width:100%; padding:10px; background:#111; color:white;">
+                    <option value="La Braise">La Braise</option>
+                    <option value="L'Arsenal">L'Arsenal</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="contenu">Message</label>
+                <textarea name="contenu" rows="8" required style="width:100%; padding:10px; background:#111; color:white;"></textarea>
+            </div>
+            <button type="submit" class="btn-post" style="width:100%; cursor:pointer;">Publier 🌶️</button>
+        </form>
+    </section>
+</main>
+<script src="/static/script.js"></script>
+{{template "footer" .}}
