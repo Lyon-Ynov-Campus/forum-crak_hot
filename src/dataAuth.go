@@ -41,6 +41,8 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		userInfos.AccountError = "Le seul caractère spécial autorisé pour le nom d'utilisateur est _ . Veuillez réessayer."
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
 	}
@@ -49,6 +51,8 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 	if userInfos.AccountError != "" {
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
 	}
@@ -57,6 +61,8 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		userInfos.AccountError = "La taille du mot de passe doit être d'au moins 12 caractères."
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
 	}
@@ -65,6 +71,8 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		userInfos.AccountError = "Les mots de passe ne correspondent pas."
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
 	}
@@ -82,10 +90,12 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		} else if strings.Contains(errMsg, "username") && strings.Contains(errMsg, "unique") {
 			userInfos.AccountError = "Ce nom d'utilisateur est déjà utilisé."
 		} else {
-			userInfos.AccountError = errMsg
+			userInfos.AccountError = "Impossible de créer le compte. Veuillez réessayer plus tard."
 		}
 		userInfos.Password = ""
 		userInfos.ConfPassword = ""
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
 	}
@@ -145,6 +155,8 @@ func dataLoginCheck(w http.ResponseWriter, r *http.Request, userInfos *UserInfos
 	} else {
 		userInfos.AccountError = "Email ou mot de passe incorrect."
 		userInfos.Password = ""
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	}
 }

@@ -22,11 +22,11 @@
             <form action="/checkregister" method="POST" class="auth-form">
                 <div class="form-group">
                     <label>Pseudo :</label>
-                    <input type="text" name="username" placeholder="Votre pseudo" value="{{if .AccountError}}{{.Username}}{{end}}" required>
+                    <input type="text" name="username" placeholder="Votre pseudo" value="{{.Username}}" required>
                 </div>
                 <div class="form-group">
                     <label>Email :</label>
-                    <input type="email" name="email" placeholder="votre@email.com" value="{{if .AccountError}}{{.Email}}{{end}}" required>
+                    <input type="email" name="email" placeholder="votre@email.com" value="{{.Email}}" required>
                 </div>
                 <div class="form-group">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -54,15 +54,9 @@
                     <input type="password" name="confpassword" placeholder="••••••••" required>
                 </div>
 
-                {{if .AccountError}}
-                    <div class="alert" style="color: #ff4d4d; margin-top: 10px; font-weight: 600;">
-                        {{.AccountError}}
-                    </div>
-                {{end}}
-
                 <button type="submit" class="btn-black">S'inscrire</button>
             </form>
         </div>
     </main>
-</body>
-</html>
+
+    {{template "footer" .}}

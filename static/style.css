@@ -254,6 +254,64 @@ body {
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
 }
 
+#toast-container {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.toast {
+    min-width: 280px;
+    max-width: 360px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: #333;
+    color: #fff;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: toast-show 0.25s ease forwards;
+    pointer-events: auto;
+}
+
+.toast-success {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.toast-error {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+@keyframes toast-show {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toast-hide {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
 .auth-tabs {
     display: flex;
     height: 60px;

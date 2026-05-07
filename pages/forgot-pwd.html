@@ -1,34 +1,45 @@
-{{template "header.html" .}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Réinitialisation de mot de passe</title>
+</head>
+<body class="auth-body">
+    <main class="auth-page">
+        <div class="auth-container">
+            <div class="auth-tabs">
+                <div class="tab active" style="width: 100%;">RÉINITIALISATION DE MOT DE PASSE</div>
+            </div>
 
-<main class="auth-body">
-    <div class="auth-container">
-        <div class="auth-tabs">
-            <div class="tab active" style="width: 100%;">RÉINITIALISATION DE MOT DE PASSE</div>
+            {{if .ResetSent}}
+                <div class="alert success" style="color: #2ecc71; margin-bottom: 15px; font-weight: 600; padding: 15px; background-color: #f0f8f4; border-radius: 8px;">
+                    Si cet email existe dans notre système, vous recevrez un lien de réinitialisation. Ce lien expire dans 1 heure.
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="/login" class="btn-black">Retour à la page de connexion</a>
+                </div>
+            {{else}}
+                <form action="/send-reset" class="auth-form" method="POST">
+                    <div class="form-group">
+                        <label for="email">Email associé au compte :</label>
+                        <input type="email" id="email" name="email" placeholder="piment@hot.com" required>
+                        <p style="font-size: 0.85rem; color: #7f8c8d; margin-top: 8px;">
+                            Entrez l'adresse email associée à votre compte. Si elle existe, vous recevrez un lien pour réinitialiser votre mot de passe.
+                        </p>
+                    </div>
+                    <button type="submit" class="btn-black">Recevoir le Lien</button>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="/login" class="btn-login-text" style="font-size: 11px;">Retour à la page de connexion</a>
+                    </div>
+                </form>
+            {{end}}
         </div>
+    </main>
 
-        {{if .ResetSent}}
-            <div class="alert success" style="color: #2ecc71; margin-bottom: 15px; font-weight: 600; padding: 15px; background-color: #f0f8f4; border-radius: 8px;">
-                Si cet email existe dans notre système, vous recevrez un lien de réinitialisation. Ce lien expire dans 1 heure.
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="/login" class="btn-black">Retour à la page de connexion</a>
-            </div>
-        {{else}}
-            <form action="/send-reset" class="auth-forms" method="POST">
-                <div class="form-group">
-                    <label for="email">Email associé au compte :</label>
-                    <input type="email" id="email" name="email" placeholder="piment@hot.com" required>
-                    <p style="font-size: 0.85rem; color: #7f8c8d; margin-top: 8px;">
-                        Entrez l'adresse email associée à votre compte. Si elle existe, vous recevrez un lien pour réinitialiser votre mot de passe.
-                    </p>
-                </div>
-                <button type="submit" class="btn-black">Recevoir le Lien</button>
-                <div style="margin-top: 20px; text-align: center;">
-                    <a href="/login" class="btn-login-text" style="font-size: 11px;">Retour à la page de connexion</a>
-                </div>
-            </form>
-        {{end}}
-    </div>
-</main>
-
-{{template "footer.html" .}}
+    {{template "footer.html" .}}
+</body>
+</html>

@@ -2,6 +2,22 @@
     <footer class="footer">
         <p>&copy; 2026 Crak'Hot - Le forum qui pique. Tous droits réservés.</p>
     </footer>
+    {{ if .FlashMessage }}
+    <div id="toast-container">
+        <div id="toast" class="toast {{if eq .FlashType "success"}}toast-success{{else}}toast-error{{end}}">
+            {{.FlashMessage}}
+        </div>
+    </div>
+    <script>
+        const toast = document.getElementById('toast');
+        if (toast) {
+            setTimeout(() => {
+                toast.style.animation = 'toast-hide 0.45s ease forwards';
+                setTimeout(() => toast.remove(), 450);
+            }, 5000);
+        }
+    </script>
+    {{ end }}
 </body>
 </html>
 {{ end }}

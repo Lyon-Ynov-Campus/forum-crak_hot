@@ -12,12 +12,13 @@ import (
 )
 
 func loginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	LoadFlash(w, r, userInfos)
 	tmpl, err := template.ParseFiles("pages/login.html", "pages/header.html", "pages/footer.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 	resetSent := r.URL.Query().Get("reset_sent") == "true"
-	
+
 	data := struct {
 		*UserInfos
 		IsConnected bool
@@ -38,6 +39,7 @@ func checkloginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	LoadFlash(w, r, userInfos)
 	tmpl, err := template.ParseFiles("pages/register.html", "pages/header.html", "pages/footer.html")
 	if err != nil {
 		log.Printf("Erreur template register : %v", err)
@@ -63,7 +65,9 @@ func checkregisterHandler(w http.ResponseWriter, r *http.Request, userInfos *Use
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	userInfos.Username, userInfos.EditedUsername, userInfos.Email, userInfos.EditedEmail, userInfos.AccountError = "", "", "", "", "Déconnecté avec succès."
+	userInfos.Username, userInfos.EditedUsername, userInfos.Email, userInfos.EditedEmail = "", "", "", ""
+	SetFlash(w, "success", "Déconnecté avec succès.")
+	userInfos.AccountError = ""
 	http.SetCookie(w, &http.Cookie{
 		Name:   "session_token",
 		Value:  "",
@@ -75,6 +79,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 
 func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	user := GetUserFromSession(r)
+	LoadFlash(w, r, user)
 
 	pp, err := getUserPP(user.Email)
 	if err == nil {
@@ -114,6 +119,8 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	if err != nil {
 		log.Println("Erreur ParseMultipartForm:", err)
 		userInfos.AccountError = "Erreur lors de l'upload."
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
@@ -121,6 +128,8 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	if err != nil {
 		log.Println("Erreur FormFile:", err)
 		userInfos.AccountError = "Erreur lors de la récupération du fichier."
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
@@ -129,6 +138,8 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	ext := strings.ToLower(filepath.Ext(handler.Filename))
 	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
 		userInfos.AccountError = "Format non supporté."
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
@@ -138,6 +149,8 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		if err := os.MkdirAll(ppDir, 0755); err != nil {
 			log.Println("Erreur création dossier static/pp:", err)
 			userInfos.AccountError = "Erreur serveur (dossier)."
+			SetFlash(w, "error", userInfos.AccountError)
+			userInfos.AccountError = ""
 			http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 			return
 		}
@@ -153,6 +166,8 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	if err != nil {
 		log.Println("Erreur création fichier:", err)
 		userInfos.AccountError = "Erreur lors de la sauvegarde."
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
@@ -161,6 +176,8 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	if err != nil {
 		log.Println("Erreur copie fichier:", err)
 		userInfos.AccountError = "Erreur lors de la copie."
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
@@ -173,8 +190,12 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	if err != nil {
 		log.Println("Erreur updateUserPP:", err)
 		userInfos.AccountError = "Erreur lors de la mise à jour de la base de données."
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 	} else {
 		userInfos.AccountError = "Photo de profil mise à jour."
+		SetFlash(w, "success", userInfos.AccountError)
+		userInfos.AccountError = ""
 	}
 	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 }
@@ -200,8 +221,12 @@ func deletePPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfo
 	err := updateUserPP(userInfos.Email, "")
 	if err != nil {
 		userInfos.AccountError = "Erreur lors de la suppression de la photo."
+		SetFlash(w, "error", userInfos.AccountError)
+		userInfos.AccountError = ""
 	} else {
 		userInfos.AccountError = "Photo de profil supprimée."
+		SetFlash(w, "success", userInfos.AccountError)
+		userInfos.AccountError = ""
 	}
 	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 }
@@ -209,12 +234,14 @@ func deletePPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfo
 func editusernameHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.EditedUsername = r.FormValue("editedusername")
 	dataEditUsername(w, r, userInfos)
+	PushAccountFlash(w, userInfos)
 	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 }
 
 func editemailHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.EditedEmail = r.FormValue("editedemail")
 	dataEditEmail(w, r, userInfos)
+	PushAccountFlash(w, userInfos)
 	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 }
 
@@ -222,8 +249,9 @@ func editpasswordHandler(w http.ResponseWriter, r *http.Request, userInfos *User
 	userInfos.EditedPassword = r.FormValue("editedpassword")
 	userInfos.ConfEditedPassword = r.FormValue("confeditedpassword")
 	dataEditPassword(w, r, userInfos)
+	PushAccountFlash(w, userInfos)
 
-	if userInfos.AccountError == "Mot de passe modifié avec succès." {
+	if userInfos.FlashType == "success" {
 		userInfos.Username, userInfos.Email = "", ""
 		http.SetCookie(w, &http.Cookie{
 			Name:   "session_token",
@@ -240,7 +268,8 @@ func editpasswordHandler(w http.ResponseWriter, r *http.Request, userInfos *User
 func deleteaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.DeleteAccountPassword = r.FormValue("deleteaccountpassword")
 	dataDeleteAccount(w, r, userInfos)
-	if userInfos.AccountError == "Compte supprimé avec succès." {
+	PushAccountFlash(w, userInfos)
+	if userInfos.FlashType == "success" {
 		userInfos.Username, userInfos.Email = "", ""
 		http.SetCookie(w, &http.Cookie{
 			Name:   "session_token",
@@ -249,5 +278,7 @@ func deleteaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *Use
 			MaxAge: -1,
 		})
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 	}
 }
