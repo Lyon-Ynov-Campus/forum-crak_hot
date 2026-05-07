@@ -238,6 +238,124 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	if r.Method == http.MethodGet {
+		user := GetUserFromSession(r)
+
+		token := r.URL.Query().Get("token")
+
+		_, isValid := ValidatePasswordResetToken(token)
+
+		if !isValid {
+			data := struct {
+				*UserInfos
+				ResetError string
+			}{
+				UserInfos:  user,
+				ResetError: "Lien de réinitialisation invalide ou expiré.",
+			}
+
+			tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
+			if err != nil {
+				fmt.Println("Erreur template:", err)
+				return
+			}
+			tmpl.ExecuteTemplate(w, "reset-password.html", data)
+			return
+		}
+
+		data := struct {
+			*UserInfos
+			Token        string
+			ResetError   string
+			ResetSuccess string
+		}{
+			UserInfos:    user,
+			Token:        token,
+			ResetError:   "",
+			ResetSuccess: "",
+		}
+
+		tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
+		if err != nil {
+			fmt.Println("Erreur template:", err)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "reset-password.html", data)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		token := r.FormValue("token")
+		newPassword := r.FormValue("password")
+		confirmPassword := r.FormValue("confirm_password")
+
+		email, isValid := ValidatePasswordResetToken(token)
+
+		if !isValid {
+			data := struct {
+				*UserInfos
+				ResetError string
+			}{
+				UserInfos:  &UserInfos{},
+				ResetError: "Lien de réinitialisation invalide ou expiré.",
+			}
+
+			tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
+			if err != nil {
+				fmt.Println("Erreur template:", err)
+				return
+			}
+			tmpl.ExecuteTemplate(w, "reset-password.html", data)
+			return
+		}
+
+		errorMsg := ResetPassword(email, newPassword, confirmPassword)
+
+		if errorMsg != "" {
+			data := struct {
+				*UserInfos
+				Token        string
+				ResetError   string
+				ResetSuccess string
+			}{
+				UserInfos:    &UserInfos{},
+				Token:        token,
+				ResetError:   errorMsg,
+				ResetSuccess: "",
+			}
+
+			tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
+			if err != nil {
+				fmt.Println("Erreur template:", err)
+				return
+			}
+			tmpl.ExecuteTemplate(w, "reset-password.html", data)
+			return
+		}
+
+		data := struct {
+			*UserInfos
+			ResetSuccess string
+		}{
+			UserInfos:    &UserInfos{},
+			ResetSuccess: "Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.",
+		}
+
+		tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
+		if err != nil {
+			fmt.Println("Erreur template:", err)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "reset-password.html", data)
+		return
+	}
+
+	http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+}
+
 // Gestion action user
 //partie post
 
