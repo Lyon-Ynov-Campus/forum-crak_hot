@@ -26,6 +26,7 @@ func checkPasswordCharacters(userInfos *UserInfos) {
 }
 
 func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
+	var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 	userInfos.AccountError = ""
 	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
 	var usernameCharIsOk = true
@@ -45,6 +46,14 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		userInfos.AccountError = ""
 		http.Redirect(w, r, "/register", http.StatusSeeOther)
 		return
+	}
+
+	if !emailRegex.MatchString(userInfos.Email) {
+		userInfos.Password = ""
+		userInfos.ConfPassword = ""
+		userInfos.AccountError = "Le format du mail est incorrecte. Veuillez réessayer"
+		SetFlash(w, "error", userInfos.AccountError)
+		http.Redirect(w, r, "/register", http.StatusSeeOther)
 	}
 
 	checkPasswordCharacters(userInfos)
