@@ -474,7 +474,19 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comments, _ := GetComByPostID(postID)
+	rawComments, _ := GetComByPostID(postID) //ajout partie recup commetnaires
+
+	var comments []ComNameAuthor
+	for _, c := range rawComments {
+		pseudo, _ := GetPseudoByUserID(c.UserID)
+
+		comments = append(comments, ComNameAuthor{
+			Contenu: c.Contenu,
+			DateCom: c.DateCom,
+			Author:  pseudo,
+		})
+	}
+
 	likeCount, _ := CountLikes(postID)
 	comCount, _ := CountCom(postID) //peut etre pas necessaire a voir pr enelver apres
 	authorPseudo, _ := GetPseudoByUserID(post.UserID)
@@ -482,7 +494,7 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 	tmpl, _ := template.ParseFiles("pages/post.html", "pages/header.html", "pages/footer.html")
 	data := struct {
 		Post      Post
-		Comments  []Com
+		Comments  []ComNameAuthor
 		LikeCount int
 		ComCount  int
 		Author    string
@@ -501,18 +513,54 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "post.html", data)
 }
 
+type ComNameAuthor struct { //rajout comme post ci dessus pour avoir nom du user
+	Contenu string
+	DateCom string
+	Author  string
+}
+
+type PostAllInfos struct { //rajout pr tout info de affiche d'un post pr avoir le nom du user
+	ID              int
+	Titre           string
+	Contenu         string
+	Categorie       string
+	DatePublication string
+	Author          string
+	ComCount        int
+	LikeCount       int
+}
+
 func seeAllPosts(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromSession(r)
 
 	posts, _ := GetAllPosts()
 
+	var postsInfos []PostAllInfos
+
+	for _, p := range posts {
+		author, _ := GetPseudoByUserID(p.UserID)
+		comCount, _ := CountCom(p.ID)
+		likeCount, _ := CountLikes(p.ID)
+
+		postsInfos = append(postsInfos, PostAllInfos{
+			ID:              p.ID,
+			Titre:           p.Titre,
+			Contenu:         p.Contenu,
+			Categorie:       p.Categorie,
+			DatePublication: p.DatePublication,
+			Author:          author,
+			ComCount:        comCount,
+			LikeCount:       likeCount,
+		})
+	}
+
 	tmpl, _ := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
 	data := struct {
-		Posts []Post
+		Posts []PostAllInfos
 		*UserInfos
 		Page string
 	}{
-		Posts:     posts,
+		Posts:     postsInfos,
 		UserInfos: user,
 		Page:      "posts",
 	}
@@ -555,7 +603,7 @@ func comCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/forum", http.StatusSeeOther) //secu si qlq accede en get car get pas id pas comme post donc au cas ou inspriation IA
+	http.Redirect(w, r, "/posts", http.StatusSeeOther) //secu si qlq accede en get car get pas id pas comme post donc au cas ou inspriation IA
 }
 
 func comUpdate(w http.ResponseWriter, r *http.Request) {

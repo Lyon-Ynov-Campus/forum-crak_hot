@@ -126,7 +126,6 @@ func CreateDB() { //rev slide 39 soutien pour creer table
 		fmt.Println("erreur table password_reset", err)
 		panic(err)
 	}
-
 }
 
 type User struct {
@@ -334,8 +333,8 @@ func GetAllPosts() ([]Post, error) {
 func GetPseudoByUserID(id int) (string, error) { //affiche autzur d'un post
 	var pseudo string
 	row := db.QueryRow(`
-        SELECT pseudo
-        FROM User
+        SELECT username
+        FROM Users
         WHERE id = ?
     `, id)
 

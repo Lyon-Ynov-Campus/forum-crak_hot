@@ -1,0 +1,73 @@
+{{ template "header" . }}
+
+<main class="container">
+    <div class="post-header">
+        <h1 class="post-title">{{.Post.Titre}}</h1>
+        <p class="post-meta">
+            Par <strong>{{.Author}}</strong> • 
+            {{.Post.DatePublication}} • 
+            Catégorie : <span class="subject-category">{{.Post.Categorie}}</span>
+        </p>
+    </div>
+
+    <hr>
+
+    <div class="post-content">
+        <p>{{.Post.Contenu}}</p>
+    </div>
+
+    <hr>
+
+    <div class="post-likes">
+        <form action="/likePost" method="post" style="display:inline;">
+            <input type="hidden" name="post_id" value="{{.Post.ID}}">
+            <button type="submit" class="btn-like">Liker ({{.LikeCount}})</button>
+        </form>
+    </div>
+
+    <hr>
+
+    <div class="forum-table-wrapper">
+        <h2>Commentaires ({{.ComCount}})</h2>
+
+        {{if .Comments}}
+            {{range .Comments}}
+                <div class="comment">
+                    <p><strong>{{.Author}}</strong> — {{.DateCom}}</p>
+                    <p>{{.Contenu}}</p>
+                </div>
+                <hr>
+            {{end}}
+        {{else}}
+            <p>pas de com pour le moment</p>
+        {{end}}
+    </div>
+
+    <hr>
+
+    {{if .UserInfos.IsConnected}}
+
+    <h3>Ajouter un commentaire</h3>
+    <div class="forum-table-wrapper" style="padding:20px; margin-top:20px;">
+
+<form action="/comCreate" method="post">
+    <input type="hidden" name="post_id" value="{{.Post.ID}}">
+
+    <div class="form-group">
+        <label for="contenu">Votre commentaire</label>
+        <textarea id="contenu" name="contenu" rows="4" style="width:100%; padding:12px; background:#D9D9D9; border:none; border-radius:4px;"></textarea>
+    </div>
+
+    <button type="submit" class="btn-black">Publier</button>
+<a href="/posts" class="btn-black" style="margin-left:10px; display:inline-block;">
+    Revenir aux posts
+</a>
+</form>
+
+    </div>
+    
+    {{end}}
+
+</main>
+
+{{ template "footer" . }}

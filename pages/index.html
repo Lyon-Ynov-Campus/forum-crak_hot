@@ -1,6 +1,9 @@
 {{template "header" .}}
 <main class="container">
     <h3 style="color: #666;">Catégories</h3>
+    {{if .UserInfos.IsConnected}}
+    <a href="/postCreate" class="btn-post">+ Poster</a>
+    {{end}}
     
     <div class="category-grid">
         <a href="/categories/la-braise" class="category-card">

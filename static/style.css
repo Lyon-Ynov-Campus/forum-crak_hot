@@ -486,6 +486,7 @@ body {
     
 }
 
+
 .btn-post:hover {
     transform: translate(-2px);
     box-shadow: 0 6px 20px rgba(221, 21, 14, 0.5);
