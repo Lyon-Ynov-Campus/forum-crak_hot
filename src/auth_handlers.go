@@ -17,7 +17,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		log.Fatal(err)
 	}
 	resetSent := r.URL.Query().Get("reset_sent") == "true"
-	
+
 	data := struct {
 		*UserInfos
 		IsConnected bool
@@ -110,7 +110,7 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	err := r.ParseMultipartForm(10 << 20) // 10MB max
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		log.Println("Erreur ParseMultipartForm:", err)
 		userInfos.AccountError = "Erreur lors de l'upload."

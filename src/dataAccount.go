@@ -6,9 +6,24 @@ import (
 	"regexp"
 	"strings"
 
-	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func checkPasswordCharacters(userInfos *UserInfos) {
+	var allowedCharacters = regexp.MustCompile(`^[\x21-\x7E]+$`)
+	var CPC_hasUpper = regexp.MustCompile(`[A-Z]`)
+	var CPC_hasLower = regexp.MustCompile(`[a-z]`)
+	var CPC_hasDigit = regexp.MustCompile(`[0-9]`)
+	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\\]^_{|}~]`)
+
+	if !allowedCharacters.MatchString(userInfos.Password) ||
+		!CPC_hasUpper.MatchString(userInfos.Password) ||
+		!CPC_hasLower.MatchString(userInfos.Password) ||
+		!CPC_hasDigit.MatchString(userInfos.Password) ||
+		!hasSpecial.MatchString(userInfos.Password) {
+		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus. Veuillez réessayer."
+	}
+}
 
 func checkEditedPasswordCharacters(userInfos *UserInfos) {
 	var allowedCharacters = regexp.MustCompile(`^[\x21-\x7E]+$`)
@@ -27,26 +42,8 @@ func checkEditedPasswordCharacters(userInfos *UserInfos) {
 }
 
 func updateUserPP(email string, ppURL string) error {
-	db, err := OpenDB()
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
+	_, err := db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
 	return err
-}
-
-func getUserPP(email string) (string, error) {
-	db, err := OpenDB()
-	if err != nil {
-		return "", err
-	}
-
-	var ppURL string
-	err = db.QueryRow("SELECT photo_profil FROM Users WHERE email = ?", email).Scan(&ppURL)
-	if err != nil {
-		return "", err
-	}
-	return ppURL, nil
 }
 
 func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
@@ -123,7 +120,6 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.DeleteAccountPassword)) == nil {
-		// Supprime la photo de profil si elle existe
 		if userInfos.LoadedPP != "" && strings.Contains(userInfos.LoadedPP, "/static/pp/") {
 			parts := strings.Split(userInfos.LoadedPP, "/static/pp/")
 			if len(parts) == 2 {

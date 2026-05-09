@@ -3,27 +3,10 @@ package forum
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
-
-func checkPasswordCharacters(userInfos *UserInfos) {
-	var allowedCharacters = regexp.MustCompile(`^[\x21-\x7E]+$`)
-	var CPC_hasUpper = regexp.MustCompile(`[A-Z]`)
-	var CPC_hasLower = regexp.MustCompile(`[a-z]`)
-	var CPC_hasDigit = regexp.MustCompile(`[0-9]`)
-	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\\]^_{|}~]`)
-
-	if !allowedCharacters.MatchString(userInfos.Password) ||
-		!CPC_hasUpper.MatchString(userInfos.Password) ||
-		!CPC_hasLower.MatchString(userInfos.Password) ||
-		!CPC_hasDigit.MatchString(userInfos.Password) ||
-		!hasSpecial.MatchString(userInfos.Password) {
-		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus. Veuillez réessayer."
-	}
-}
 
 func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
@@ -100,10 +83,10 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 		Path:     "/",
 		HttpOnly: true,
 	})
+
 	db.QueryRow("SELECT id FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
 	userInfos.Password = ""
 	userInfos.EditedPassword = ""
-	password_hash = nil
 	userInfos.AccountError = ""
 	http.Redirect(w, r, "/forum", http.StatusSeeOther)
 }
@@ -123,7 +106,6 @@ func dataLoginCheck(w http.ResponseWriter, r *http.Request, userInfos *UserInfos
 
 	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.Password)) == nil {
 		userInfos.AccountError = ""
-
 		sessionToken := GenerateToken(userInfos.Email)
 
 		db.Exec("DELETE FROM Session WHERE user_id = ?", userID)
