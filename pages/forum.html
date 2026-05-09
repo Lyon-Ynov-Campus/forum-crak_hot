@@ -1,29 +1,47 @@
-{{template "header" .}}
+{{ template "header" . }}
+
 <main class="container">
-    <h3 style="color: #666;">Catégories</h3>
-    {{if .UserInfos.IsConnected}}
-    <a href="/postCreate" class="btn-post">+ Poster</a>
-    {{end}}
 
-    
-    <div class="category-grid">
-        <a href="/categories/la-braise" class="category-card">
-            <div class="card-icon"></div>
-            <div class="card-content">
-                <h2 style="margin: 0; font-size: 18px;">La Braise</h2>
-                <p style="color: #999; font-size: 13px;">Discussions générales et blabla culinaire</p>
-                <span style="color: #666; font-size: 11px;">• Présentations • News • Divers</span>
-            </div>
-        </a>
+    <h1 class="category-title">Tous les posts</h1>
 
-        <a href="/categories/l-arsenal" class="category-card">
-            <div class="card-icon"></div>
-            <div class="card-content">
-                <h2 style="margin: 0; font-size: 18px;">L'Arsenal</h2>
-                <p style="color: #999; font-size: 13px;">Discussions générales et blabla culinaire</p>
-                <span style="color: #666; font-size: 11px;">• Présentations • News • Divers</span>
-            </div>
-        </a>
+    <div class="filter-tabs">
+        <a class="filter-link active-filter">TOP</a>
+        <a class="filter-link">RECENTS</a>
     </div>
+
+    <div class="action-bar">
+        <a href="/postCreate" class="btn-post">+ Poster</a>
+    </div>
+
+    <div class="forum-table-wrapper">
+        <table class="forum-table">
+            <thead>
+                <tr>
+                    <th>SUJET</th>
+                    <th>AUTEUR</th>
+                    <th>CATÉGORIE</th>
+                    <th>COMMENTAIRES</th>
+                    <th>DATE</th>
+                    <th>LIKES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Posts}}
+                <tr>
+                    <td>
+                        <a href="/post?id={{.ID}}" class="subject-title">{{.Titre}}</a>
+                    </td>
+                    <td class="text-muted">{{.Author}}</td>
+                    <td class="text-muted">{{.Categorie}}</td>
+                    <td class="text-muted">{{.ComCount}}</td>
+                    <td class="text-muted">{{.Date}}</td>
+                    <td class="text-muted">{{.LikeCount}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
 </main>
-{{template "footer" .}}
+
+{{ template "footer" . }}

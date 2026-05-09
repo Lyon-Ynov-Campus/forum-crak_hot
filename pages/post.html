@@ -19,11 +19,17 @@
     <hr>
 
     <div class="post-likes">
-        <form action="/likePost" method="post" style="display:inline;">
-            <input type="hidden" name="post_id" value="{{.Post.ID}}">
+    <form action="/likePost" method="post" style="display:inline;">
+        <input type="hidden" name="post_id" value="{{.Post.ID}}">
+
+        {{if .Liked}}
+            <button type="submit" class="btn-like">Retirer le like </button>
+        {{else}}
             <button type="submit" class="btn-like">Liker ({{.LikeCount}})</button>
-        </form>
-    </div>
+        {{end}}
+    </form>
+</div>
+
 
     <hr>
 

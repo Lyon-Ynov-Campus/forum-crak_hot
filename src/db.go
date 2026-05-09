@@ -303,6 +303,9 @@ func UpdatePost(id int, newTitre, newContenu, newCategorie string) error {
 }
 
 func DeletePost(id int) error {
+
+	db.Exec("DELETE FROM Commentaire WHERE post_id = ?", id)
+
 	deleteQuery := `
         DELETE FROM Post
         WHERE id = ?
@@ -449,6 +452,22 @@ func CountLikes(postID int) (int, error) {
 
 	err := row.Scan(&count)
 	return count, err
+}
+
+func HasLiked(userID, postID int) bool {
+	var count int
+	row := db.QueryRow(`
+        SELECT COUNT(*)
+        FROM Like
+        WHERE user_id = ? AND post_id = ?
+    `, userID, postID)
+
+	err := row.Scan(&count)
+	if err != nil {
+		return false
+	}
+
+	return count > 0
 }
 
 //Partie recherche

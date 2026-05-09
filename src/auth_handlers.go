@@ -17,7 +17,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		log.Fatal(err)
 	}
 	resetSent := r.URL.Query().Get("reset_sent") == "true"
-	
+
 	data := struct {
 		*UserInfos
 		IsConnected bool
@@ -88,6 +88,12 @@ func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserI
 		return
 	}
 
+	userID := GetUserID(r)
+
+	posts, _ := GetUserPosts(userID)
+
+	comments, _ := GetUserCom(userID)
+
 	tmpl, err := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
 	if err != nil {
 		log.Printf("Erreur template account : %v", err)
@@ -95,9 +101,13 @@ func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserI
 	}
 
 	data := struct {
+		Posts    []Post
+		Comments []Com
 		*UserInfos
 		Page string
 	}{
+		Posts:     posts,
+		Comments:  comments,
 		UserInfos: user,
 		Page:      "account",
 	}

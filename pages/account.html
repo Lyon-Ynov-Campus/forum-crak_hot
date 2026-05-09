@@ -159,6 +159,79 @@
     </div>
 
 
-    </form>
+    <article class="card stack">
+    <h2>Mes Posts</h2>
+
+    {{if .Posts}}
+        {{range .Posts}}
+            <div class="card" style="padding: 1em; margin-bottom: 1em;">
+
+                <form action="/postUpdate" method="post" class="stack">
+                    <input type="hidden" name="id" value="{{.ID}}">
+
+                    <label>Titre :</label>
+                    <input type="text" name="titre" value="{{.Titre}}">
+
+                    <label>Contenu :</label>
+                    <textarea name="contenu" rows="3">{{.Contenu}}</textarea>
+
+                    <label>Catégorie :</label>
+                    <div class="stack">
+                        <label><input type="radio" name="categorie" value="Recette" {{if eq .Categorie "Recette"}}checked{{end}}> Recette</label>
+                        <label><input type="radio" name="categorie" value="Événement" {{if eq .Categorie "Événement"}}checked{{end}}> Événement</label>
+                        <label><input type="radio" name="categorie" value="Adresse" {{if eq .Categorie "Adresse"}}checked{{end}}> Adresse</label>
+                        <label><input type="radio" name="categorie" value="Avis" {{if eq .Categorie "Avis"}}checked{{end}}> Avis</label>
+                        <label><input type="radio" name="categorie" value="Conseils" {{if eq .Categorie "Conseils"}}checked{{end}}> Conseils</label>
+                    </div>
+                    <div class="btn-row" style="margin-top: 0.5em;">
+                        <button type="submit" class="btn-black">Appliquer les modifications</button>
+                        <a href="/postDelete?id={{.ID}}" class="btn danger" >Supprimer</a>
+                    </div>
+                </form>
+
+            </div>
+        {{end}}
+    {{else}}
+        <p class="muted">Tu n'as encore publié aucun post.</p>
+    {{end}}
+</article>
+
+
+<article class="card stack">
+    <h2>Mes Commentaires</h2>
+
+    {{if .Comments}}
+        {{range .Comments}}
+            <div class="card" style="padding: 1em; margin-bottom: 1em;">
+
+                <form action="/comUpdate" method="post" class="stack">
+                    <input type="hidden" name="id" value="{{.ID}}">
+
+                    <label>Commentaire :</label>
+                    <textarea name="contenu" rows="2">{{.Contenu}}</textarea>
+
+                    <div class="btn-row" style="margin-top: 0.5em;">
+                        <button type="submit" class="btn-black">Appliquer les modifications</button>
+                        <a href="/comDelete?id={{.ID}}" class="btn danger">Supprimer</a>
+                    </div>
+                </form>
+
+            </div>
+        {{end}}
+    {{else}}
+        <p class="muted">Tu n'as encore écrit aucun commentaire.</p>
+    {{end}}
+    <a href="/forum" class="btn-black" style="margin-left:10px; display:inline-block; color: white;">
+        Revenir au forum principal
+    </a>
+</article>
+
+
+
+
+
+
+
+
 </main>
 {{template "footer" .}}

@@ -71,27 +71,35 @@ func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 }
 
 func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	posts, _ := GetAllPosts()
 	user := GetUserFromSession(r)
 
-	pp, err := getUserPP(user.Email)
-	if err == nil {
-		user.LoadedPP = pp
-	} else {
-		user.LoadedPP = ""
+	var postsAllInfos []PostAllInfos
+	for _, p := range posts {
+		pseudo, _ := GetPseudoByUserID(p.UserID)
+		comCount, _ := CountCom(p.ID)
+		likeCount, _ := CountLikes(p.ID)
+
+		postsAllInfos = append(postsAllInfos, PostAllInfos{
+			ID:              p.ID,
+			Titre:           p.Titre,
+			Author:          pseudo,
+			Categorie:       p.Categorie,
+			ComCount:        comCount,
+			LikeCount:       likeCount,
+			DatePublication: p.DatePublication,
+		})
 	}
 
-	tmpl, err := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
 	data := struct {
+		Posts []PostAllInfos
 		*UserInfos
 		Page string
 	}{
+		Posts:     postsAllInfos,
 		UserInfos: user,
-		Page:      "home",
+		Page:      "forum",
 	}
 
 	tmpl.ExecuteTemplate(w, "forum.html", data)
@@ -407,8 +415,10 @@ func postCreate(w http.ResponseWriter, r *http.Request) {
 func postUpdate(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromSession(r)
 
-	postID, _ := strconv.Atoi(r.URL.Query().Get("id")) //recup id du post ds URL
-	post, err := GetPostByID(postID)                   //recup post contenu dnas BDD
+	//postID, _ := strconv.Atoi(r.URL.Query().Get("id")) //recup id du post ds URL
+	postID, _ := strconv.Atoi(r.FormValue("id"))
+
+	post, err := GetPostByID(postID) //recup post contenu dnas BDD
 
 	if err != nil { //si psot existe pas
 		http.Redirect(w, r, "/myPosts", http.StatusSeeOther)
@@ -442,7 +452,8 @@ func postUpdate(w http.ResponseWriter, r *http.Request) {
 
 		UpdatePost(postID, newTitre, newContenu, newCategorie)
 
-		http.Redirect(w, r, "/myPosts", http.StatusSeeOther)
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		return
 	}
 }
 
@@ -491,6 +502,12 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 	comCount, _ := CountCom(postID) //peut etre pas necessaire a voir pr enelver apres
 	authorPseudo, _ := GetPseudoByUserID(post.UserID)
 
+	userID := GetUserID(r)
+	liked := false
+	if userID != 0 {
+		liked = HasLiked(userID, postID)
+	}
+
 	tmpl, _ := template.ParseFiles("pages/post.html", "pages/header.html", "pages/footer.html")
 	data := struct {
 		Post      Post
@@ -498,6 +515,7 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 		LikeCount int
 		ComCount  int
 		Author    string
+		Liked     bool
 		*UserInfos
 		Page string
 	}{
@@ -506,6 +524,7 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 		LikeCount: likeCount,
 		ComCount:  comCount,
 		Author:    authorPseudo,
+		Liked:     liked,
 		UserInfos: user,
 		Page:      "post",
 	}
@@ -637,7 +656,7 @@ func comUpdate(w http.ResponseWriter, r *http.Request) {
 
 		UpdateCom(comID, newContenu)
 
-		http.Redirect(w, r, "/myComs", http.StatusSeeOther)
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
 	}
 }
 
@@ -646,17 +665,17 @@ func comDelete(w http.ResponseWriter, r *http.Request) {
 	com, err := GetComByID(comID)
 
 	if err != nil {
-		http.Redirect(w, r, "/myComs", http.StatusSeeOther)
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
 		return
 	}
 
 	if com.UserID != GetUserID(r) { // vérifie que c'est l'auteur
-		http.Redirect(w, r, "/myComs", http.StatusSeeOther)
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
 		return
 	}
 
 	DeleteCom(comID)
-	http.Redirect(w, r, "/myComs", http.StatusSeeOther) //reviens tjs a chaque fois pour voir si bien supprimer
+	http.Redirect(w, r, "/posts", http.StatusSeeOther) //reviens tjs a chaque fois pour voir si bien supprimer
 }
 
 func seeMyComs(w http.ResponseWriter, r *http.Request) { //page profil user
@@ -684,16 +703,11 @@ func likePost(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserID(r)
 	postID, _ := strconv.Atoi(r.FormValue("post_id"))
 
-	LikePost(userID, postID)
-
-	http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
-}
-
-func unLikePost(w http.ResponseWriter, r *http.Request) {
-	userID := GetUserID(r)
-	postID, _ := strconv.Atoi(r.FormValue("post_id"))
-
-	UnlikePost(userID, postID)
+	if HasLiked(userID, postID) {
+		UnlikePost(userID, postID)
+	} else {
+		LikePost(userID, postID)
+	}
 
 	http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
 }
