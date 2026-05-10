@@ -159,79 +159,79 @@
     </div>
 
 
-    <article class="card stack">
-    <h2>Mes Posts</h2>
+    <div class="profile-section">
 
-    {{if .Posts}}
-        {{range .Posts}}
-            <div class="card" style="padding: 1em; margin-bottom: 1em;">
+    <article class="profile-card">
+        <h2>Mes Posts</h2>
 
-                <form action="/postUpdate" method="post" class="stack">
-                    <input type="hidden" name="id" value="{{.ID}}">
+        {{if .Posts}}
+            {{range .Posts}}
+                <div class="profile-post">
 
-                    <label>Titre :</label>
-                    <input type="text" name="titre" value="{{.Titre}}">
+                    <form action="/postUpdate" method="post">
+                        <input type="hidden" name="id" value="{{.ID}}">
 
-                    <label>Contenu :</label>
-                    <textarea name="contenu" rows="3">{{.Contenu}}</textarea>
+                        <label>Titre :</label>
+                        <input type="text" name="titre" value="{{.Titre}}">
 
-                    <label>Catégorie :</label>
-                    <div class="stack">
-                        <label><input type="radio" name="categorie" value="Recette" {{if eq .Categorie "Recette"}}checked{{end}}> Recette</label>
-                        <label><input type="radio" name="categorie" value="Événement" {{if eq .Categorie "Événement"}}checked{{end}}> Événement</label>
-                        <label><input type="radio" name="categorie" value="Adresse" {{if eq .Categorie "Adresse"}}checked{{end}}> Adresse</label>
-                        <label><input type="radio" name="categorie" value="Avis" {{if eq .Categorie "Avis"}}checked{{end}}> Avis</label>
-                        <label><input type="radio" name="categorie" value="Conseils" {{if eq .Categorie "Conseils"}}checked{{end}}> Conseils</label>
-                    </div>
-                    <div class="btn-row" style="margin-top: 0.5em;">
-                        <button type="submit" class="btn-black">Appliquer les modifications</button>
-                        <a href="/postDelete?id={{.ID}}" class="btn danger" >Supprimer</a>
-                    </div>
-                </form>
+                        <label>Contenu :</label>
+                        <textarea name="contenu" rows="3">{{.Contenu}}</textarea>
 
-            </div>
+                        <label>Catégorie :</label>
+                        <div class="profile-radio-group">
+                            <label><input type="radio" name="categorie" value="Recette" {{if eq .Categorie "Recette"}}checked{{end}}> Recette</label>
+                            <label><input type="radio" name="categorie" value="Événement" {{if eq .Categorie "Événement"}}checked{{end}}> Événement</label>
+                            <label><input type="radio" name="categorie" value="Adresse" {{if eq .Categorie "Adresse"}}checked{{end}}> Adresse</label>
+                            <label><input type="radio" name="categorie" value="Avis" {{if eq .Categorie "Avis"}}checked{{end}}> Avis</label>
+                            <label><input type="radio" name="categorie" value="Conseils" {{if eq .Categorie "Conseils"}}checked{{end}}> Conseils</label>
+                        </div>
+
+                        <div class="profile-btn-row">
+                            <button type="submit" class="btn-update">Appliquer</button>
+                        </div>
+                    </form>
+
+                    <form action="/postDelete" method="get" style="margin-top:10px;">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <button type="submit" class="btn-delete">Supprimer</button>
+                    </form>
+
+                </div>
+            {{end}}
+        {{else}}
+            <p class="muted">Tu n'as encore publié aucun post.</p>
         {{end}}
-    {{else}}
-        <p class="muted">Tu n'as encore publié aucun post.</p>
-    {{end}}
-</article>
+    </article>
 
+    <article class="profile-card">
+        <h2>Mes Commentaires</h2>
 
-<article class="card stack">
-    <h2>Mes Commentaires</h2>
+        {{if .Comments}}
+            {{range .Comments}}
+                <div class="profile-comment">
 
-    {{if .Comments}}
-        {{range .Comments}}
-            <div class="card" style="padding: 1em; margin-bottom: 1em;">
+                    <form action="/comUpdate" method="post">
+                        <input type="hidden" name="id" value="{{.ID}}">
 
-                <form action="/comUpdate" method="post" class="stack">
-                    <input type="hidden" name="id" value="{{.ID}}">
+                        <label>Commentaire :</label>
+                        <textarea name="contenu" rows="2">{{.Contenu}}</textarea>
 
-                    <label>Commentaire :</label>
-                    <textarea name="contenu" rows="2">{{.Contenu}}</textarea>
+                        <div class="profile-btn-row">
+                            <button type="submit" class="btn-update">Appliquer</button>
+                            <a href="/comDelete?id={{.ID}}" class="btn-delete">Supprimer</a>
+                        </div>
+                    </form>
 
-                    <div class="btn-row" style="margin-top: 0.5em;">
-                        <button type="submit" class="btn-black">Appliquer les modifications</button>
-                        <a href="/comDelete?id={{.ID}}" class="btn danger">Supprimer</a>
-                    </div>
-                </form>
-
-            </div>
+                </div>
+            {{end}}
+        {{else}}
+            <p class="muted">Tu n'as encore écrit aucun commentaire.</p>
         {{end}}
-    {{else}}
-        <p class="muted">Tu n'as encore écrit aucun commentaire.</p>
-    {{end}}
-    <a href="/forum" class="btn-black" style="margin-left:10px; display:inline-block; color: white;">
-        Revenir au forum principal
-    </a>
-</article>
+    </article>
 
+    <a href="/forum" class="back-to-forum">Revenir au forum principal</a>
 
-
-
-
-
-
+</div>
 
 </main>
 {{template "footer" .}}

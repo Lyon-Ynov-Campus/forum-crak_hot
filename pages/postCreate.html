@@ -1,48 +1,37 @@
 {{template "header" .}}
+
 <main class="container">
-    <h3 style="color: #666;">Création post</h3>
-    
-            <form action="/postCreate" method="post" class="stack">
-                <p>
-                <label>Titre du post :</label><br />
-                <input type="text" name="titre" placeholder="Titre..." required>
-                </p>
 
-                <p>
-                <label >Catégorie :</label><br />
-                <input type="radio"  id="categorie" name="categorie" value="Recette">
-                <label> Recette</label>
-                <br>
-                <input type="radio"  id="categorie" name="categorie" value="Evenement">
-                <label > Evenement</label>
-                <br>
-                <input type="radio"  id="categorie" name="categorie" value="Adresse">
-                <label > Adresse</label>
-                <br>
-                <input type="radio"  id="categorie" name="categorie" value="Avis">
-                <label > Avis</label>
-                <br>
-                <input type="radio"  id="categorie" name="categorie" value="Conseils">
-                <label> Conseils</label>
-                </p>
+    <div class="create-post-wrapper">
 
-                <p>
-                <label >Descripton :</label><br />
-                <textarea type="text" name="contenu" rows="10" cols="50" required>
-                </textarea>
-                </p>
-                
-                <div class="btn-row">
-                    <input type="submit" value="Post" class="btn-black" style="float: right;">
-                    <input type="submit" value="Annuler" class="btn-black" style="float: right;">
-                </div>
-        
-            </form>
+        <h2 class="create-post-title">Création post</h2>
+
+        <form action="/postCreate" method="post" class="create-post-form">
+
+            <label for="titre">Titre du post :</label>
+            <input type="text" id="titre" name="titre" placeholder="Titre..." required>
+
+            <label>Catégorie :</label>
+            <div class="category-block">
+                <input type="radio" name="categorie" value="Recette"> <label>Recette</label><br>
+                <input type="radio" name="categorie" value="Evenement"> <label>Événement</label><br>
+                <input type="radio" name="categorie" value="Adresse"> <label>Adresse</label><br>
+                <input type="radio" name="categorie" value="Avis"> <label>Avis</label><br>
+                <input type="radio" name="categorie" value="Conseils"> <label>Conseils</label>
+            </div>
+
+            <label for="contenu">Description :</label>
+            <textarea id="contenu" name="contenu" placeholder="Décris ton post..." required></textarea>
+
+            <div class="btn-row-post">
+                <button type="button" class="btn-cancel" onclick="window.location.href='/forum'">Annuler</button>
+                <button type="submit" class="btn-submit">Poster</button>
+            </div>
+
+        </form>
+
+    </div>
+
 </main>
+
 {{template "footer" .}}
-
-            
-
-
-
-            
