@@ -95,10 +95,29 @@ func StartServer() {
 	// route gestion action user
 	//post
 	http.HandleFunc("/postCreate", postCreate)
+	/*http.HandleFunc("/postCreate", func(w http.ResponseWriter, r *http.Request) {
+        // On s'assure que la PP globale est à jour
+        if userInfos.Email != "" {
+            userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+        }
+        postCreate(w, r) 
+    })*/
 	http.HandleFunc("/postUpdate", postUpdate)
 	http.HandleFunc("/postDelete", postDelete)
-	http.HandleFunc("/post", seeOnePost)   //post indeivudel du membre
-	http.HandleFunc("/posts", seeAllPosts) //tout les post afficher
+	 http.HandleFunc("/post", seeOnePost)   //post indeivudel du membre
+	/*http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+        if userInfos.Email != "" {
+            userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+        }
+        seeOnePost(w, r)
+    })*/
+	 http.HandleFunc("/posts", seeAllPosts) //tout les post afficher
+	/*http.HandleFunc("/posts", func(w http.ResponseWriter, r *http.Request) {
+        if userInfos.Email != "" {
+            userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+        }
+        seeAllPosts(w, r)
+    })*/
 	http.HandleFunc("/myPosts", myPosts)   //tout MES psot afficher
 	// com
 	http.HandleFunc("/comCreate", comCreate)

@@ -86,35 +86,43 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 }
 
 func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	user := GetUserFromSession(r)
-	LoadFlash(w, r, user)
-	// homeHandler(w, r, userInfos)
+    user := GetUserFromSession(r)
+    if !user.IsConnected {
+        http.Redirect(w, r, "/login", http.StatusSeeOther)
+        return
+    }
 
-	if !user.IsConnected {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
+    LoadFlash(w, r, user)
+    
+    // On récupère les données pour le profil (la partie de ta collègue)
+    userID := GetUserID(r)
+    myPosts, _ := GetUserPosts(userID)
+    myComments, _ := GetUserCom(userID)
 
-	pp, err := getUserPP(user.Email)
-	user.LoadedPP = ""
-	if err == nil {
-		user.LoadedPP = pp
-	}
+    pp, err := getUserPP(user.Email)
+    user.LoadedPP = ""
+    if err == nil {
+        user.LoadedPP = pp
+    }
 
-	tmpl, err := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
-	if err != nil {
-		log.Printf("Erreur template account : %v", err)
-		return
-	}
+    tmpl, err := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
+    if err != nil {
+        log.Printf("Erreur template account : %v", err)
+        return
+    }
 
-	data := struct {
-		*UserInfos
-		Page string
-	}{
-		UserInfos: user,
-		Page:      "account",
-	}
-	tmpl.ExecuteTemplate(w, "account.html", data)
+    data := struct {
+        *UserInfos
+        Page     string
+        Posts    []Post
+        Comments []Com
+    }{
+        UserInfos: user,
+        Page:      "account",
+        Posts:    myPosts,
+        Comments: myComments,
+    }
+    tmpl.ExecuteTemplate(w, "account.html", data)
 }
 
 func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
