@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -67,9 +68,12 @@ func API_CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 func API_GetPostsHandler(w http.ResponseWriter, r *http.Request) {
 	posts, err := GetAllPosts()
-	if err != nil {
-		respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erreur lors de la récupération des posts"})
-		return
-	}
-	respondWithJSON(w, http.StatusOK, posts)
+    if err != nil {
+        respondWithJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erreur SQL"})
+        return
+    }
+	if posts == nil {
+        posts = []Post{} 
+    }
+    respondWithJSON(w, http.StatusOK, posts)
 }
