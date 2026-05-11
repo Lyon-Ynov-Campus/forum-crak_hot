@@ -461,18 +461,18 @@ func postDelete(w http.ResponseWriter, r *http.Request) {
 	postID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	post, err := GetPostByID(postID)
 	if err != nil {
-		http.Redirect(w, r, "/myPosts", http.StatusSeeOther)
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
 
 	// seule sécurité nécessaire : vérifier que c’est l’auteur
 	if post.UserID != GetUserID(r) { //aide IA ms ps forcmetn necessaire a rev
-		http.Redirect(w, r, "/myPosts", http.StatusSeeOther)
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
 
 	DeletePost(postID)
-	http.Redirect(w, r, "/myPosts", http.StatusSeeOther)
+	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 }
 
 func seeOnePost(w http.ResponseWriter, r *http.Request) {
@@ -628,11 +628,13 @@ func comCreate(w http.ResponseWriter, r *http.Request) {
 func comUpdate(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromSession(r)
 
-	comID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	//comID, _ := strconv.Atoi(r.URL.Query().Get("id"))//rev pkmarche pas aussi post
+	comID, _ := strconv.Atoi(r.FormValue("id"))
+
 	com, err := GetComByID(comID)
 
 	if err != nil || com.UserID != GetUserID(r) { //verif que c auteru come post
-		http.Redirect(w, r, "/myComs", http.StatusSeeOther)
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
 
