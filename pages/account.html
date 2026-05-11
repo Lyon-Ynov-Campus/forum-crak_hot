@@ -31,7 +31,10 @@
                 const fileInput = document.getElementById('addPP');
                 let previewImg = document.getElementById('pp-preview');
                 const cancelBtn = document.getElementById('cancel-pp');
-                let originalPP = previewImg ? previewImg.src : null;
+                let originalPP = null;
+                if (previewImg) {
+                    originalPP = previewImg.src;
+                }
                 const defaultPP = '/static/pp/defaultPP.png';
 
                 fileInput.addEventListener('change', function(e) {
@@ -42,6 +45,7 @@
                             if (!previewImg) {
                                 previewImg = document.createElement('img');
                                 previewImg.id = 'pp-preview';
+                                previewImg.alt = 'Photo de profil';
                                 previewImg.style.width = '120px';
                                 previewImg.style.height = '120px';
                                 previewImg.style.objectFit = 'cover';
@@ -50,17 +54,29 @@
                                 document.querySelector('#pp-form').parentNode.insertBefore(previewImg, document.querySelector('#pp-form'));
                             }
                             previewImg.src = ev.target.result;
-                            cancelBtn.style.display = 'inline-block';
+                            previewImg.style.display = 'block';
+                            if (cancelBtn) {
+                                cancelBtn.style.display = 'inline-block';
+                            }
                         };
                         reader.readAsDataURL(file);
                     }
                 });
 
-                cancelBtn.addEventListener('click', function() {
-                    fileInput.value = '';
-                    previewImg.src = (originalPP && !originalPP.endsWith('defaultPP.png')) ? originalPP : defaultPP;
-                    cancelBtn.style.display = 'none';
-                });
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', function() {
+                        // Réinitialise l'input file
+                        fileInput.value = '';
+                        // Remet la photo de profil originale ou l'image par défaut
+                        if (originalPP && !originalPP.endsWith('defaultPP.png')) {
+                            previewImg.src = originalPP;
+                        } else {
+                            previewImg.src = defaultPP;
+                        }
+                        previewImg.style.display = 'block';
+                        cancelBtn.style.display = 'none';
+                    });
+                }
             </script>
         </article>
 
@@ -70,12 +86,10 @@
                 <label for="editedusername">Nouveau nom d'utilisateur :</label>
                 <input type="text" id="editedusername" name="editedusername" placeholder="{{.Username}}" required>
                 
-                {{if .AccountError}}
-                    {{if or (eq .AccountError "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.") (eq .AccountError "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer.") }}
-                        <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
-                    {{else if eq .AccountError "Nom d'utilisateur modifié avec succès."}}
-                        <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
-                    {{end}}
+                {{if or (eq .AccountError "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.") (eq .AccountError "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer.") }}
+                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
+                {{else if eq .AccountError "Nom d'utilisateur modifié avec succès."}}
+                    <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
                 {{end}}
                 
                 <div class="btn-row">
@@ -90,12 +104,10 @@
                 <label for="editedemail">Nouvel email :</label>
                 <input type="email" id="editedemail" name="editedemail" placeholder="{{.Email}}" required>
                 
-                {{if .AccountError}}
-                    {{if eq .AccountError "Cet email est déjà utilisé. Veuillez en choisir un autre."}}
-                        <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
-                    {{else if eq .AccountError "Email modifié avec succès."}}
-                        <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
-                    {{end}}
+                {{if eq .AccountError "Cet email est déjà utilisé. Veuillez en choisir un autre."}}
+                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
+                {{else if eq .AccountError "Email modifié avec succès."}}
+                    <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
                 {{end}}
                 
                 <div class="btn-row">
@@ -140,7 +152,7 @@
             </form>
         </article>
     </section>
-
+    
     <div style="margin-top: 30px; text-align: center;">
         <form action="/logout" method="post">
             <button type="submit" class="btn-logout" style="background: none; border: 1px solid #ccc; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: white;">Se déconnecter</button>

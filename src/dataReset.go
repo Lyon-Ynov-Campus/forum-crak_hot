@@ -36,7 +36,10 @@ func CreatePasswordResetToken(email string) (string, error) {
 	expiration := time.Now().Add(1 * time.Hour).Format("2006-01-02 15:04:05")
 	createdAt := time.Now().Format("2006-01-02 15:04:05")
 
-	db.Exec("DELETE FROM PasswordReset WHERE email = ?", email)
+	_, err = db.Exec("DELETE FROM PasswordReset WHERE email = ?", email)
+	if err != nil {
+		return "", err
+	}
 
 	_, err = db.Exec(
 		"INSERT INTO PasswordReset (email, token, expiration, created_at) VALUES (?, ?, ?, ?)",
@@ -75,6 +78,22 @@ func SendPasswordResetEmail(email string, token string) error {
 	resetLink := fmt.Sprintf("http://localhost:8080/reset-password?token=%s", token)
 	fmt.Printf("\n[PASSWORD RESET EMAIL]\nTo: %s\n\n", email)
 	fmt.Printf("Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe:\n%s\n\n", resetLink)
+
+	/*
+		//Pour la prod
+		from := "noreply@forum.com"
+		password := "your_email_password"
+		to := []string{email}
+		smtpHost := "smtp.gmail.com"
+		smtpPort := "587"
+		message := fmt.Sprintf("Subject: Réinitialisation de mot de passe\n\n"+
+		    "Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe:\n%s\n"+
+		    "Ce lien expire dans 1 heure.", resetLink)
+		auth := smtp.PlainAuth("", from, password, smtpHost)
+		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, []byte(message))
+		return err
+	*/
+
 	return nil
 }
 
@@ -117,7 +136,10 @@ func ResetPassword(email string, newPassword string, confirmPassword string) str
 		return "Erreur lors de la mise à jour du mot de passe."
 	}
 
-	db.Exec("DELETE FROM PasswordReset WHERE email = ?", email)
+	_, err = db.Exec("DELETE FROM PasswordReset WHERE email = ?", email)
+	if err != nil {
+		fmt.Println("Erreur lors de la suppression du token:", err)
+	}
 
 	return ""
 }
@@ -142,6 +164,7 @@ func DataForgotPasswordSend(w http.ResponseWriter, r *http.Request, email string
 
 	token, err := CreatePasswordResetToken(email)
 	if err != nil {
+		fmt.Println("Erreur création token:", err)
 		return "Erreur lors de la création du token. Veuillez réessayer."
 	}
 
