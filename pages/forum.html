@@ -1,10 +1,34 @@
 {{ template "header" . }}
 
+<div class="sort-bar">
+    <form method="get" class="sort-form" style="display: flex; gap: 10px; align-items: center;">
+
+        <!-- Menu déroulant -->
+        <select name="sort">
+            <option value="">-- Trier par --</option>
+            <option value="date_desc">Date (récent -> ancien)</option>
+            <option value="date_asc">Date (ancien -> récent)</option>
+            <option value="likes_desc">Likes (plus -> moins)</option>
+            <option value="likes_asc">Likes (moins -> plus)</option>
+            <option value="com_desc">Commentaires (plus -> moins)</option>
+            <option value="com_asc">Commentaires (moins -> plus)</option>
+        </select>
+
+        <input type="hidden" name="t" value="{{.Search}}">
+
+        <button type="submit" class="btn-black">Trier</button>
+
+        <a href="/posts" class="btn-black">Réinitialiser</a>
+
+    </form>
+</div>
+
 <main class="container">
+
 
     <h1 class="category-title">Tous les posts</h1>
 
-    <div class="filter-tabs">
+    </div>
         <a class="filter-link active-filter">TOP</a>
         <a class="filter-link">RECENTS</a>
     </div>
@@ -43,5 +67,4 @@
     </div>
 
 </main>
-
 {{ template "footer" . }}

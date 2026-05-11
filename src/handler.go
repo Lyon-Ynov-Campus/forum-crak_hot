@@ -71,8 +71,11 @@ func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 }
 
 func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	posts, _ := GetAllPosts()
+	search := r.URL.Query().Get("t")
+	sort := r.URL.Query().Get("sort")
 	user := GetUserFromSession(r)
+	posts := GetSearchSort(search, sort)
+	//posts, _ := GetAllPosts() ps les meme champs
 
 	var postsAllInfos []PostAllInfos
 	for _, p := range posts {
@@ -93,11 +96,15 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 
 	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
 	data := struct {
-		Posts []PostAllInfos
+		Posts  []PostAllInfos
+		Search string
+		Sort   string
 		*UserInfos
 		Page string
 	}{
 		Posts:     postsAllInfos,
+		Search:    search,
+		Sort:      sort,
 		UserInfos: user,
 		Page:      "forum",
 	}

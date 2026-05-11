@@ -105,6 +105,7 @@ func StartServer() {
 
 	//like
 	http.HandleFunc("/likePost", likePost)
+
 	//reseua
 	http.HandleFunc("/seeUser", seeUser)         //ds recherche reseau quand on clique btn voir proifl
 	http.HandleFunc("/seeAllUsers", seeAllUsers) //ds recherche liste des membres de la recherche
