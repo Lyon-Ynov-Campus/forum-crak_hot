@@ -1,8 +1,9 @@
 {{template "header" .}}
-<main class="page container"> <section class="card stack" style="margin-top: 2rem;">
-        <h1>Mon Profil</h1>
-        <h1>Réglages du compte</h1>
-    </section>
+<main class="page container"> <section class="card stack">
+    <div style="margin-bottom: 30px; border-left: 5px solid #ff4500; padding-left: 15px;">
+        <h1 style="color: #fff; margin: 0; font-size: 2rem;">Mon Profil</h1>
+        <p style="color: #888; margin: 5px 0 0 0;">Réglages du compte</p>
+    </div>
 
     <section class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
         
@@ -29,7 +30,6 @@
                 const fileInput = document.getElementById('addPP');
                 let previewImg = document.getElementById('pp-preview');
                 const cancelBtn = document.getElementById('cancel-pp');
-                // Sauvegarde l'URL de la photo de profil actuelle
                 let originalPP = null;
                 if (previewImg) {
                     originalPP = previewImg.src;
@@ -64,9 +64,7 @@
 
                 if (cancelBtn) {
                     cancelBtn.addEventListener('click', function() {
-                        // Réinitialise l'input file
                         fileInput.value = '';
-                        // Remet la photo de profil originale ou l'image par défaut
                         if (originalPP && !originalPP.endsWith('defaultPP.png')) {
                             previewImg.src = originalPP;
                         } else {
@@ -79,82 +77,106 @@
             </script>
         </article>
 
-        <article class="card stack">
-            <h2>Nom d'utilisateur</h2>
-            <form action="/editusername" method="post" class="stack">
-                <label for="editedusername">Nouveau nom d'utilisateur :</label>
-                <input type="text" id="editedusername" name="editedusername" placeholder="{{.Username}}" required>
-                
-                {{if or (eq .AccountError "Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.") (eq .AccountError "Le seul caractères spécial autorisé du nom d'utilisateur est _ . Veuillez réessayer.") }}
-                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
-                {{else if eq .AccountError "Nom d'utilisateur modifié avec succès."}}
-                    <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
-                {{end}}
-                
-                <div class="btn-row">
-                    <input type="submit" value="Mettre à jour" class="btn-black">
-                </div>
-            </form>
-        </article>
+        <div class="edit-container">
+            <div class="edit-tabs">
+                <button id="editUsernameButton" class="tab active" style="background-color: #332b2b;">Pseudo</button>
+                <button id="editEmailButton" class="tab" style="background-color: #332b2b;">Email</button>
+                <button id="editPasswordButton" class="tab" style="background-color: #332b2b;">Mot de passe</button>
+                <button id="editDeleteButton" class="tab" style="background-color: #332b2b;">Compte</button>
 
-        <article class="card stack">
-            <h2>Email</h2>
-            <form action="/editemail" method="post" class="stack">
-                <label for="editedemail">Nouvel email :</label>
-                <input type="email" id="editedemail" name="editedemail" placeholder="{{.Email}}" required>
-                
-                {{if eq .AccountError "Cet email est déjà utilisé. Veuillez en choisir un autre."}}
-                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
-                {{else if eq .AccountError "Email modifié avec succès."}}
-                    <div class="alert success" style="color: #2ecc71;">{{.AccountError}}</div>
-                {{end}}
-                
-                <div class="btn-row">
-                    <input type="submit" value="Mettre à jour" class="btn-black">
-                </div>
-            </form>
-        </article>
+                <script>
+                    const buttons = {
+                        editUsernameButton: 'dataEditUsername',
+                        editEmailButton: 'dataEditEmail',
+                        editPasswordButton: 'dataEditPassword',
+                        editDeleteButton: 'dataEditDelete'
+                    };
 
-        <article class="card stack">
-            <h2>Sécurité</h2>
-            <form action="/editpassword" method="post" class="stack">
-                <label for="editedpassword">Nouveau mot de passe :</label>
-                <input type="password" id="editedpassword" name="editedpassword" required>
-                
-                <label for="confeditedpassword">Confirmation :</label>
-                <input type="password" id="confeditedpassword" name="confeditedpassword" required>
-                
-                {{if and (.AccountError) (not (or (eq .AccountError "Nom d'utilisateur modifié avec succès.") (eq .AccountError "Email modifié avec succès.")))}}
-                    <div class="alert" style="color: #e74c3c;">{{.AccountError}}</div>
-                {{end}}
-                
-                <div class="btn-row">
-                    <input type="submit" value="Changer le mot de passe" class="btn-black">
-                </div>
-            </form>
-        </article>
+                    const allSections = Object.values(buttons);
+                    const allButtons = Object.keys(buttons);
 
-        <article class="card stack" style="border: 1px solid #ff4d4d22;">
-            <h2 style="color: #ff4d4d;">Zone Dangereuse</h2>
-            <p class="muted">La suppression est irréversible.</p>
-            <form action="/deleteaccount" method="post" class="stack">
-                <label for="deleteaccountpassword">Confirme avec ton mot de passe :</label>
-                <input type="password" id="deleteaccountpassword" name="deleteaccountpassword" required>
-                
-                {{if eq .AccountError "Mot de passe incorrect. Impossible de supprimer le compte. Veuillez réessayer."}}
-                    <div class="alert" style="color: #ff4d4d;">{{.AccountError}}</div>
-                {{end}}
-                
-                <div class="btn-row">
-                    <button type="submit" class="btn secondary" style="background: #ff4d4d; color: white; border: none;">Supprimer le compte</button>
-                </div>
-            </form>
-        </article>
+                    allButtons.forEach(buttonId => {
+                        document.getElementById(buttonId).addEventListener('click', () => {
+
+                            // Affichage des sections
+                            allSections.forEach(sectionId => {
+                                document.getElementById(sectionId).style.display = 'none';
+                            });
+                            document.getElementById(buttons[buttonId]).style.display = 'block';
+
+                            // Gestion des classes active/inactive
+                            allButtons.forEach(id => {
+                                const btn = document.getElementById(id);
+                                btn.classList.remove('active');
+                                btn.classList.add('inactive');
+                            });
+
+                            const activeBtn = document.getElementById(buttonId);
+                            activeBtn.classList.add('active');
+                            activeBtn.classList.remove('inactive');
+                        });
+                    });
+                </script>
+
+
+                <article class="card stack" id="dataEditUsername" style="border: 1px solid #ff4d4d22;">
+                        <h2>Nom d'utilisateur</h2>
+                    <form action="/editusername" method="post" class="stack">
+                        <label for="editedusername">Nouveau nom d'utilisateur :</label>
+                        <input type="text" id="editedusername" name="editedusername" placeholder="{{.Username}}" required>
+                        
+                        <div class="btn-row">
+                            <input type="submit" value="Mettre à jour">
+                        </div>
+                    </form>
+                </article>
+
+                <article class="card stack" id="dataEditEmail" style="border: 1px solid #ff4d4d22; display: none;">
+                    <h2>Email</h2>
+                    <form action="/editemail" method="post" class="stack">
+                        <label for="editedemail">Nouvel email :</label>
+                        <input type="email" id="editedemail" name="editedemail" placeholder="{{.Email}}" required>
+                        
+                        <div class="btn-row">
+                            <input type="submit" value="Mettre à jour">
+                        </div>
+                    </form>
+                </article>
+
+                <article class="card stack" id="dataEditPassword" style="border: 1px solid #ff4d4d22; display: none;">
+                    <h2>Sécurité</h2>
+                    <form action="/editpassword" method="post" class="stack">
+                        <label for="editedpassword">Nouveau mot de passe :</label>
+                        <input type="password" id="editedpassword" name="editedpassword" required>
+                        
+                        <label for="confeditedpassword">Confirmation :</label>
+                        <input type="password" id="confeditedpassword" name="confeditedpassword" required>
+                        
+                        <div class="btn-row">
+                            <input type="submit" value="Changer le mot de passe">
+                        </div>
+                    </form>
+                </article>
+
+                <article class="card stack" id="dataEditDelete" style="border: 1px solid #ff4d4d22; display: none;">
+                    <h2>Suppression du compte   </h2>
+                    <p class="muted">La suppression est irréversible.</p>
+                    <form action="/deleteaccount" method="post" class="stack">
+                        <label for="deleteaccountpassword">Confirme avec ton mot de passe :</label>
+                        <input type="password" id="deleteaccountpassword" name="deleteaccountpassword" required>
+                        
+                        <div class="btn-row">
+                            <button type="submit">Supprimer le compte</button>
+                        </div>
+                    </form>
+                </article>
+            </div>
+        </div>
     </section>
     
     <div style="margin-top: 30px; text-align: center;">
         <form action="/logout" method="post">
-            <button type="submit" class="btn-logout" style="background: none; border: 1px solid #ccc; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Se déconnecter</button>
+            <button type="submit" class="btn-logout" style="border: 1px solid #ccc; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Se déconnecter</button>
         </form>
     </div>
 </main>

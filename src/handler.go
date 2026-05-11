@@ -132,6 +132,13 @@ func NetworkHandler(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromSession(r)
 	LoadFlash(w, r, user)
 
+	pp, err := getUserPP(user.Email)
+	if err == nil {
+		user.LoadedPP = pp
+	} else {
+		user.LoadedPP = ""
+	}
+
 	data := struct {
 		*UserInfos
 		Page string
@@ -153,6 +160,13 @@ func HeartHandler(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromSession(r)
 	LoadFlash(w, r, user)
 
+	pp, err := getUserPP(user.Email)
+	if err == nil {
+		user.LoadedPP = pp
+	} else {
+		user.LoadedPP = ""
+	}
+
 	type HeartPost struct {
 		ID        int
 		Titre     string
@@ -173,7 +187,7 @@ func HeartHandler(w http.ResponseWriter, r *http.Request) {
     ORDER BY total_likes DESC, p.date_publication DESC
     LIMIT 1`
 
-	err := db.QueryRow(query).Scan(&hp.ID, &hp.Titre, &hp.Contenu, &hp.Date, &hp.Auteur, &hp.LikeCount)
+	err = db.QueryRow(query).Scan(&hp.ID, &hp.Titre, &hp.Contenu, &hp.Date, &hp.Auteur, &hp.LikeCount)
 
 	if err != nil {
 		hp = HeartPost{Titre: "Pas encore de favori", Contenu: "Faites vivre le forum pour voir apparaître un coup de cœur !"}
