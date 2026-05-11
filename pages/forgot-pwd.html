@@ -1,34 +1,67 @@
-{{template "header.html" .}}
+{{template "header" .}}
 
 <main class="auth-body">
     <div class="auth-container">
         <div class="auth-tabs">
-            <div class="tab active" style="width: 100%;">RÉINITIALISATION DE MOT DE PASSE</div>
+            <div class="tab active" style="width: 100%; cursor: default;">MOT DE PASSE OUBLIÉ</div>
         </div>
 
-        {{if .ResetSent}}
-            <div class="alert success" style="color: #2ecc71; margin-bottom: 15px; font-weight: 600; padding: 15px; background-color: #f0f8f4; border-radius: 8px;">
-                Si cet email existe dans notre système, vous recevrez un lien de réinitialisation. Ce lien expire dans 1 heure.
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="/login" class="btn-black">Retour à la page de connexion</a>
-            </div>
-        {{else}}
-            <form action="/send-reset" class="auth-forms" method="POST">
-                <div class="form-group">
-                    <label for="email">Email associé au compte :</label>
-                    <input type="email" id="email" name="email" placeholder="piment@hot.com" required>
-                    <p style="font-size: 0.85rem; color: #7f8c8d; margin-top: 8px;">
-                        Entrez l'adresse email associée à votre compte. Si elle existe, vous recevrez un lien pour réinitialiser votre mot de passe.
-                    </p>
+        <div class="auth-content">
+            {{if .ResetSent}}
+                <div class="alert success-box">
+                    <p>🌶️ <strong>Email envoyé !</strong></p>
+                    <p>Si cette adresse est enregistrée chez Crak'Hot, vous recevrez un lien de réinitialisation d'ici quelques instants.</p>
+                    <p><small>Note : Le lien expirera dans 1 heure.</small></p>
                 </div>
-                <button type="submit" class="btn-black">Recevoir le Lien</button>
-                <div style="margin-top: 20px; text-align: center;">
-                    <a href="/login" class="btn-login-text" style="font-size: 11px;">Retour à la page de connexion</a>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="/login" class="btn-black">Retour à la connexion</a>
                 </div>
-            </form>
-        {{end}}
+
+            {{else}}
+                <p class="auth-instruction">Entrez votre email pour recevoir un lien de récupération.</p>
+                
+                <form action="/send-reset" class="auth-forms" method="POST">
+                    <div class="form-group">
+                        <label for="email">Votre adresse Email :</label>
+                        <input type="email" id="email" name="email" placeholder="piment@hot.com" required>
+                    </div>
+
+                    {{if .ResetError}}
+                        <div class="alert error-text" style="color: #ff4d4d; margin-bottom: 15px; font-size: 0.9rem;">
+                            {{.ResetError}}
+                        </div>
+                    {{end}}
+
+                    <button type="submit" class="btn-black">Envoyer le lien</button>
+                    
+                    <div class="auth-footer" style="margin-top: 20px; text-align: center;">
+                        <a href="/login" class="btn-login-text" style="font-size: 12px; color: #999; text-decoration: none;">
+                            &larr; Revenir à la page de connexion
+                        </a>
+                    </div>
+                </form>
+            {{end}}
+        </div>
     </div>
 </main>
 
-{{template "footer.html" .}}
+<style>
+    .success-box {
+        color: #2ecc71;
+        background-color: rgba(46, 204, 113, 0.1);
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #2ecc71;
+        text-align: center;
+        line-height: 1.5;
+    }
+    .auth-instruction {
+        text-align: center;
+        color: #bbb;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+    }
+</style>
+
+{{template "footer" .}}

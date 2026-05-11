@@ -1,11 +1,31 @@
 {{template "header" .}}
-<main class="container">
-    <h1 style="color: #ff4500;">Espace Réseau</h1>
-    <p>Cette page est en cours de développement !</p>
-    <p>Ici, vous pourrez bientôt re-chercher d'autres membres du forum.</p>
 
-    <div style="margin-top: 30px;">
-        <i class="fa-solid fa-users-finder" style="font-size: 100px; opacity: 0.5;"></i>
+<main class="container">
+    <div style="margin-top: 40px; border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 30px;">
+        <h1 style="color: var(--grad-red); margin: 0; font-size: 2.5rem;">Espace Réseau</h1>
+        <p class="muted" style="margin-top: 10px; font-size: 1.1rem;">Connectez-vous avec les autres passionnés de piment.</p>
+    </div>
+
+    <div style="text-align: center; padding: 60px 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
+        <div style="margin-bottom: 20px;">
+            <i class="fa-solid fa-users-viewfinder" style="font-size: 80px; color: var(--grad-orange); opacity: 0.8;"></i>
+        </div>
+        
+        <h2 style="color: #fff; margin-bottom: 15px;">Chantier en cours 🌶️</h2>
+        <p style="color: #999; max-width: 500px; margin: 0 auto 25px auto; line-height: 1.6;">
+            Cette page est actuellement en cours de développement. Bientôt, vous pourrez rechercher des membres, consulter leurs profils et voir leurs contributions au forum.
+        </p>
+
+        <div style="max-width: 400px; margin: 0 auto; display: flex; gap: 10px;">
+            <input type="text" placeholder="Rechercher un membre..." disabled 
+                style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #111; color: #555; cursor: not-allowed;">
+            <button class="btn-post" style="padding: 0 20px; opacity: 0.5; cursor: not-allowed;">Chercher</button>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center;">
+        <a href="/forum" class="btn-login-text" style="color: #666;">&larr; Retourner aux discussions</a>
     </div>
 </main>
+
 {{template "footer" .}}

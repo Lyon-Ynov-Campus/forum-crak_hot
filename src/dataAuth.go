@@ -3,16 +3,33 @@ package forum
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
+func checkPasswordCharacters(userInfos *UserInfos) {
+	var allowedCharacters = regexp.MustCompile(`^[\x21-\x7E]+$`)
+	var CPC_hasUpper = regexp.MustCompile(`[A-Z]`)
+	var CPC_hasLower = regexp.MustCompile(`[a-z]`)
+	var CPC_hasDigit = regexp.MustCompile(`[0-9]`)
+	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\\]^_{|}~]`)
+
+	if !allowedCharacters.MatchString(userInfos.Password) ||
+		!CPC_hasUpper.MatchString(userInfos.Password) ||
+		!CPC_hasLower.MatchString(userInfos.Password) ||
+		!CPC_hasDigit.MatchString(userInfos.Password) ||
+		!hasSpecial.MatchString(userInfos.Password) {
+		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus. Veuillez réessayer."
+	}
+}
+
 func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
+	
 	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
 	var usernameCharIsOk = true
-
 	for _, charac := range userInfos.Username {
 		if strings.ContainsRune(checkUsernameChar, charac) {
 			usernameCharIsOk = false
@@ -85,6 +102,7 @@ func dataRegisterSend(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 	})
 
 	db.QueryRow("SELECT id FROM Users WHERE email=?", userInfos.Email).Scan(&userInfos.DBid)
+	
 	userInfos.Password = ""
 	userInfos.EditedPassword = ""
 	userInfos.AccountError = ""

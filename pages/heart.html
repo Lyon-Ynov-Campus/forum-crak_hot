@@ -8,16 +8,18 @@
 
     {{ if eq .Post.Titre "Pas encore de favori" }}
         <div style="text-align: center; padding: 50px; color: #666;">
-            <i class="fa-solid fa- pepper-hot" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
-            <p>Aucun post n'a encore reçu de piment d'approbation.</p>
+            <i class="fa-solid fa-pepper-hot" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+            <p>Aucun post n'a encore reçu de piment d'approbation. Soyez le premier !</p>
         </div>
     {{ else }}
         <article style="background: #1a1a1a; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
             <div style="padding: 25px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
                     <h2 style="color: #ff4500; margin: 0; font-size: 1.5rem;">{{.Post.Titre}}</h2>
+                    
                     <span style="background: rgba(255, 69, 0, 0.2); color: #ff4500; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">
-                        <i class="fa-solid fa-fire"></i> {{.Post.LikeCount}} likes
+                        <i class="fa-solid fa-fire"></i> 
+                        <span id="like-count-{{.Post.ID}}">{{.Post.LikeCount}}</span> likes
                     </span>
                 </div>
 
@@ -27,8 +29,9 @@
                     <div style="color: #888; font-size: 0.9rem;">
                         Par <strong>{{.Post.Auteur}}</strong> <span style="margin: 0 5px;">•</span> {{.Post.Date}}
                     </div>
+                    
                     <a href="/post?id={{.Post.ID}}" class="btn-register" style="text-decoration: none; padding: 8px 20px;">
-                        Lire la suite
+                        Lire la suite 🌶️
                     </a>
                 </div>
             </div>
@@ -37,4 +40,3 @@
 </main>
 
 {{ template "footer" . }}
-

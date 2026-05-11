@@ -2,9 +2,10 @@
 
 <main class="container">
     <div class="category-header">
-        <h1 class="category-title">{{.Title}}</h1>
-        {{if .IsConnected}}
-            <a href="/create-post?cat={{.Title}}" class="btn-post">+ Poster</a>
+        <h1 class="category-title">{{if .Title}}{{.Title}}{{else}}Tous les posts{{end}}</h1>
+        
+        {{if .UserInfos.IsConnected}}
+            <a href="/postCreate?cat={{.Title}}" class="btn-post">+ Poster</a>
         {{end}}
     </div>
 
@@ -23,27 +24,31 @@
                 <tr>
                     <th>Sujet</th>
                     <th>Auteur</th>
+                    <th>Catégorie</th>
                     <th>Réponses</th>
-                    <th>Activité</th>
+                    <th>Date</th>
+                    <th>Likes</th>
                 </tr>
             </thead>
             <tbody>
+                {{range .Posts}}
                 <tr>
                     <td>
-                        <div class="subject-title">{{.Sujet}}</div>
+                        <a href="/post?id={{.ID}}" class="subject-title">{{.Titre}}</a>
                     </td>
-                    <td class="text-muted">{{.Pseudo}}</td>
-                    <td class="text-muted">{{.Reponses}}</td>
-                    <td class="text-muted">{{.Activite}}</td>
+                    <td class="text-muted">{{.Author}}</td>
+                    <td class="text-muted">{{.Categorie}}</td>
+                    <td class="text-muted">{{.ComCount}}</td>
+                    <td class="text-muted">{{.DatePublication}}</td>
+                    <td class="text-muted">{{.LikeCount}}</td>
                 </tr>
+                {{else}}
                 <tr>
-                    <td>
-                        <div class="subject-title">{{.Sujet}}</div>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: #888;">
+                        Aucun post trouvé dans cette catégorie.
                     </td>
-                    <td class="text-muted">{{.Pseudo}}</td>
-                    <td class="text-muted">{{.Reponses}}</td>
-                    <td class="text-muted">{{.Activite}}</td>
                 </tr>
+                {{end}}
             </tbody>
         </table>
     </div>

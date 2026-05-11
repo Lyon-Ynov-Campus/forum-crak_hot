@@ -1,0 +1,62 @@
+{{ template "header" . }}
+
+<main class="container">
+
+    <div class="post-wrapper">
+
+        <h1 class="post-title">{{.Post.Titre}}</h1>
+
+        <p class="post-meta">
+            Par <strong>{{.Author}}</strong> • 
+            Catégorie : <span class="subject-category">{{.Post.Categorie}}</span>
+        </p>
+
+        <div class="post-content">
+            <p>{{.Post.Contenu}}</p>
+        </div>
+
+        <form action="/likePost" method="post">
+            <input type="hidden" name="post_id" value="{{.Post.ID}}">
+            {{if .Liked}}
+                <button type="submit" class="btn-like">Retirer le like</button>
+            {{else}}
+                <button type="submit" class="btn-like">Liker ({{.LikeCount}})</button>
+            {{end}}
+        </form>
+
+        <div class="comment-section">
+            <h2>Commentaires ({{.ComCount}})</h2>
+
+            {{if .Comments}}
+                {{range .Comments}}
+                    <div class="comment">
+                        <p><strong>{{.Author}}</strong> — {{.DateCom}}</p>
+                        <p>{{.Contenu}}</p>
+                    </div>
+                {{end}}
+            {{else}}
+                <p style="color:#888;">Pas de commentaire pour le moment.</p>
+            {{end}}
+        </div>
+
+        {{if .UserInfos.IsConnected}}
+        <div class="add-comment-box">
+            <h3>Ajouter un commentaire</h3>
+
+            <form action="/comCreate" method="post">
+                <input type="hidden" name="post_id" value="{{.Post.ID}}">
+
+                <textarea name="contenu" rows="4" placeholder="Votre commentaire..."></textarea>
+
+                <button type="submit" class="btn-black" style="margin-top:15px;">Publier</button>
+            </form>
+        </div>
+        {{end}}
+
+        <a href="/posts" class="btn-back">Revenir aux posts</a>
+
+    </div>
+
+</main>
+
+{{ template "footer" . }}

@@ -1,26 +1,64 @@
 {{template "header" .}}
+
 <main class="page container">
     <section class="card stack" style="margin-top: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
-        <h1 style="color: var(--grad-red);">Dresser une nouvelle table</h1>
+        <h1 style="color: var(--grad-red); margin-bottom: 0.5rem;">Dresser une nouvelle table</h1>
+        <p class="muted" style="margin-bottom: 2rem;">Partagez votre passion pour le piment avec la communauté.</p>
+
         <form id="create-post-form" action="/postCreate" method="POST" class="stack" style="gap: 1.5rem;">
+            
             <div class="form-group">
-                <label for="titre">Titre du sujet</label>
-                <input type="text" name="titre" required style="width:100%; padding:10px; background:#111; color:white;">
+                <label for="titre" style="font-weight: bold; display: block; margin-bottom: 8px;">Titre du sujet</label>
+                <input type="text" id="titre" name="titre" placeholder="Un titre qui donne faim..." required 
+                    style="width:100%; padding:12px; background:#111; border: 1px solid #333; border-radius: 8px; color:white;">
             </div>
+
             <div class="form-group">
-                <label for="categorie">Catégorie</label>
-                <select name="categorie" style="width:100%; padding:10px; background:#111; color:white;">
-                    <option value="La Braise">La Braise</option>
-                    <option value="L'Arsenal">L'Arsenal</option>
-                </select>
+                <label style="font-weight: bold; display: block; margin-bottom: 8px;">Catégorie</label>
+                <div class="category-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; background: #111; padding: 15px; border-radius: 8px; border: 1px solid #333;">
+                    <label class="cat-option"><input type="radio" name="categorie" value="Recette" required> Recette</label>
+                    <label class="cat-option"><input type="radio" name="categorie" value="Événement"> Événement</label>
+                    <label class="cat-option"><input type="radio" name="categorie" value="Adresse"> Adresse</label>
+                    <label class="cat-option"><input type="radio" name="categorie" value="Avis"> Avis</label>
+                    <label class="cat-option"><input type="radio" name="categorie" value="Conseils"> Conseils</label>
+                    <label class="cat-option"><input type="radio" name="categorie" value="La Braise"> La Braise</label>
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="contenu">Message</label>
-                <textarea name="contenu" rows="8" required style="width:100%; padding:10px; background:#111; color:white;"></textarea>
+                <label for="contenu" style="font-weight: bold; display: block; margin-bottom: 8px;">Votre message</label>
+                <textarea id="contenu" name="contenu" rows="10" placeholder="Décrivez votre recette, votre avis ou votre question..." required 
+                        style="width:100%; padding:12px; background:#111; border: 1px solid #333; border-radius: 8px; color:white; resize: vertical;"></textarea>
             </div>
-            <button type="submit" class="btn-post" style="width:100%; cursor:pointer;">Publier 🌶️</button>
+
+            <div class="btn-row-post" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn-post" style="flex: 2; padding: 12px; cursor: pointer;">
+                    Publier le post 🌶️
+                </button>
+                <a href="/forum" class="btn-cancel" style="flex: 1; text-align: center; padding: 12px; background: #333; color: white; border-radius: 8px; text-decoration: none; line-height: 1.2;">
+                    Annuler
+                </a>
+            </div>
         </form>
     </section>
 </main>
-<script src="/static/script.js"></script>
+
+<style>
+    .cat-option {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: #ccc;
+        transition: 0.2s;
+    }
+    .cat-option:hover {
+        color: var(--grad-orange);
+    }
+    .cat-option input[type="radio"] {
+        accent-color: var(--grad-red);
+    }
+</style>
+
 {{template "footer" .}}

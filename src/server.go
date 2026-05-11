@@ -30,8 +30,8 @@ var userInfos UserInfos
 
 func StartServer() {
 	http.HandleFunc("/api/like", API_LikeHandler)
-	http.HandleFunc("/api/create-post", API_CreatePostHandler)
 	http.HandleFunc("/api/posts", API_GetPostsHandler)
+	http.HandleFunc("/api/create-post", API_CreatePostHandler)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		homeHandler(w, r, &userInfos)
@@ -42,7 +42,6 @@ func StartServer() {
 		}
 		forumHandler(w, r, &userInfos)
 	})
-
 	http.HandleFunc("/categories/", CategoryHandler)
 	http.HandleFunc("/forgot-password", ForgotPasswordPage)
 	http.HandleFunc("/send-reset", SendResetLink)
@@ -51,35 +50,35 @@ func StartServer() {
 	http.HandleFunc("/coup-de-coeur", HeartHandler)
 
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		loginHandler(w, r, &userInfos)
+		loginHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/checklogin", func(w http.ResponseWriter, r *http.Request) {
-		checkloginHandler(w, r, &userInfos)
+		checkloginHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		registerHandler(w, r, &userInfos)
+		registerHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/checkregister", func(w http.ResponseWriter, r *http.Request) {
-		checkregisterHandler(w, r, &userInfos)
+		checkregisterHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
-		logoutHandler(w, r, &userInfos)
+		logoutHandler(w, r, &userInfos) 
 	})
 
 	http.HandleFunc("/editaccount", func(w http.ResponseWriter, r *http.Request) {
 		if userInfos.Email != "" {
-			userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+			userInfos.LoadedPP, _ = getUserPP(userInfos.Email) 
 		}
-		editaccountHandler(w, r, &userInfos)
+		editaccountHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/editusername", func(w http.ResponseWriter, r *http.Request) {
-		editusernameHandler(w, r, &userInfos)
+		editusernameHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/editemail", func(w http.ResponseWriter, r *http.Request) {
-		editemailHandler(w, r, &userInfos)
+		editemailHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/editpassword", func(w http.ResponseWriter, r *http.Request) {
-		editpasswordHandler(w, r, &userInfos)
+		editpasswordHandler(w, r, &userInfos) 
 	})
 	http.HandleFunc("/deleteaccount", func(w http.ResponseWriter, r *http.Request) {
 		deleteaccountHandler(w, r, &userInfos)
@@ -111,6 +110,7 @@ func StartServer() {
 
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
 	as := http.FileServer(http.Dir("assets"))
 	http.Handle("/assets/", http.StripPrefix("/assets/", as))
 
