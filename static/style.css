@@ -876,3 +876,58 @@ body {
 .back-to-forum:hover {
     background-color: #444;
 }
+
+
+
+/* ----------- BARRE DE TRI DU FORUM ----------- */
+
+.sort-bar {
+    width: 100%;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.sort-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: 1px solid #222;
+}
+
+/* Style du menu déroulant */
+.sort-form select {
+    background-color: #121212;
+    color: white;
+    border: 1px solid #333;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.sort-form select:hover {
+    border-color: var(--grad-orange);
+}
+
+/* Bouton Trier */
+.sort-form button.btn-black {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Bouton Réinitialiser */
+.sort-form a.btn-black {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"sort"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -386,49 +388,33 @@ func SearchUsersByName(pseudo string) ([]User, error) {
 	return users, nil
 }
 
-func GetSearchSort(search, sort string) []Post {
-
-	query := `
-        SELECT
-            p.id, p.titre, p.contenu, p.categorie, p.datePublication,
-            (SELECT COUNT(*) FROM Likes WHERE post_id = p.id) AS likeCount,
-            (SELECT COUNT(*) FROM Commentaire WHERE post_id = p.id) AS comCount
-        FROM Post p
-        WHERE p.titre LIKE ?
-    `
-
-	switch sort {
+func ApplyTri(posts []Post, sortPar string) []Post {
+	switch sortPar {
 	case "date_asc":
-		query += " ORDER BY p.datePublication ASC"
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].DatePublication < posts[j].DatePublication
+		})
 	case "date_desc":
-		query += " ORDER BY p.datePublication DESC"
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].DatePublication > posts[j].DatePublication
+		})
 	case "likes_asc":
-		query += " ORDER BY likeCount ASC"
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountLikes < posts[j].CountLikes
+		})
 	case "likes_desc":
-		query += " ORDER BY likeCount DESC"
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountLikes > posts[j].CountLikes
+		})
 	case "com_asc":
-		query += " ORDER BY comCount ASC"
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountCom < posts[j].CountCom
+		})
 	case "com_desc":
-		query += " ORDER BY comCount DESC"
-	default:
-		query += " ORDER BY p.datePublication DESC"
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountCom > posts[j].CountCom
+		})
 	}
-
-	rows, err := db.Query(query, "%"+search+"%")
-	if err != nil {
-		fmt.Println("err sql", err)
-		return nil
-	}
-	defer rows.Close()
-
-	var posts []Post
-
-	for rows.Next() {
-		var p Post
-		rows.Scan(&p.ID, &p.Titre, &p.Contenu, &p.Categorie, &p.DatePublication, &p.CountLikes, &p.CountCom)
-		posts = append(posts, p)
-	}
-
 	return posts
 }
 
