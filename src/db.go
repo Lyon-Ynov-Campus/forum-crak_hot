@@ -26,7 +26,7 @@ func InitDB() {
 
 func CreateDB() {
 	InitDB()
-	
+
 	schema := `
 	CREATE TABLE IF NOT EXISTS Users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,14 +96,14 @@ type User struct {
 }
 
 type Post struct {
-	ID              int		`json:"id"`
-	Titre           string	`json:"titre"`
-	Contenu         string	`json:"contenu"`
-	Categorie       string	`json:"categorie"`
-	DatePublication string	`json:"date_publication"`
-	UserID          int		`json:"user_id"`
-	CountLikes      int		`json:"count_likes"`
-	CountCom        int		`json:"count_com"`
+	ID              int    `json:"id"`
+	Titre           string `json:"titre"`
+	Contenu         string `json:"contenu"`
+	Categorie       string `json:"categorie"`
+	DatePublication string `json:"date_publication"`
+	UserID          int    `json:"user_id"`
+	CountLikes      int    `json:"count_likes"`
+	CountCom        int    `json:"count_com"`
 }
 
 type Com struct {
@@ -114,7 +114,7 @@ type Com struct {
 	PostID  int    `json:"post_id"`
 }
 
-func CreateUser(pseudo, email, motDePasse string) error { //creer profil
+func CreateUser(pseudo, email, motDePasse string) error {
 	insertQuery := `
         INSERT INTO User(pseudo, email, mot_de_passe)
         VALUES(?, ?, ?)
@@ -135,7 +135,7 @@ func GetUserByID(id int) (User, error) {
 	return u, err
 }
 
-/* --- Partie update de la page profil user --- */
+/* ===== Partie update de la page profil user ===== */
 
 func UpdateUEmail(id int, newEmail string) error {
 	_, err := db.Exec("UPDATE Users SET email = ? WHERE id = ?", newEmail, id)
@@ -164,7 +164,9 @@ func UpdateUPhoto(id int, photo string) error {
 
 func GetUserPosts(userID int) ([]Post, error) {
 	rows, err := db.Query("SELECT id, titre, contenu, date_publication, user_id FROM Post WHERE user_id = ?", userID)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 	var posts []Post
 	for rows.Next() {
@@ -204,7 +206,7 @@ func DeleteUser(id int) error { //supprimer compte avec tout data
 	return err
 }
 
-/* --- Partie posts ---*/
+/* ===== Partie posts =====*/
 
 func CreatePost(titre, contenu, categorie, date string, userID int) error {
 	_, err := db.Exec("INSERT INTO Post (titre, contenu, categorie, date_publication, user_id) VALUES (?, ?, ?, ?, ?)",
@@ -231,7 +233,9 @@ func DeletePost(id int) error {
 
 func GetAllPosts() ([]Post, error) {
 	rows, err := db.Query("SELECT id, titre, contenu, categorie, date_publication, user_id FROM Post ORDER BY id DESC")
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 	var posts []Post
 	for rows.Next() {
@@ -248,8 +252,7 @@ func GetPseudoByUserID(id int) (string, error) {
 	return pseudo, err
 }
 
-
-/* --- Patie commentaires --- */
+/* ===== Patie commentaires ===== */
 
 func CreateCom(contenu, dateCom string, userID, postID int) error {
 	_, err := db.Exec("INSERT INTO Commentaire (contenu, date_com, user_id, post_id) VALUES (?, ?, ?, ?)",
@@ -278,7 +281,9 @@ func DeleteCom(id int) error {
 
 func GetComByPostID(postID int) ([]Com, error) {
 	rows, err := db.Query("SELECT id, contenu, date_com, user_id, post_id FROM Commentaire WHERE post_id = ?", postID)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 	var comments []Com
 	for rows.Next() {
@@ -308,7 +313,7 @@ func GetComByID(id int) (Com, error) {
 	return c, err
 }
 
-/* --- Partie likes --- */
+/* ===== Partie likes ===== */
 
 func LikePost(userID, postID int) error {
 	_, err := db.Exec("INSERT INTO Like (user_id, post_id) VALUES (?, ?)", userID, postID)
@@ -332,11 +337,13 @@ func HasLiked(userID, postID int) bool {
 	return err == nil && count > 0
 }
 
-/* --- Partie recherche --- */
+/* ===== Partie recherche =====*/
 
 func SearchPostsByTitle(query string) ([]Post, error) {
 	rows, err := db.Query("SELECT id, titre, contenu, categorie, date_publication, user_id FROM Post WHERE titre LIKE ?", "%"+query+"%")
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 	var posts []Post
 	for rows.Next() {
@@ -347,11 +354,13 @@ func SearchPostsByTitle(query string) ([]Post, error) {
 	return posts, nil
 }
 
-/* --- Partie réseau --- */
+/* ===== Partie réseau ===== */
 
 func GetAllUsers() ([]User, error) {
 	rows, err := db.Query("SELECT id, email, username, photo_profil FROM Users")
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 	var users []User
 	for rows.Next() {
@@ -364,7 +373,9 @@ func GetAllUsers() ([]User, error) {
 
 func SearchUsersByName(pseudo string) ([]User, error) {
 	rows, err := db.Query("SELECT id, email, username, photo_profil FROM Users WHERE username LIKE ?", "%"+pseudo+"%")
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 	var users []User
 	for rows.Next() {

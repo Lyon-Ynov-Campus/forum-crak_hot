@@ -39,6 +39,13 @@
         <a class="filter-link active-filter">TOP</a>
         <a class="filter-link">RECENTS</a>
     </div>
+    
+    {{if .Query}}
+    <p style="color:#aaa; margin-bottom:10px;">
+    Résultats pour : "<strong>{{.Query}}</strong>"
+    </p>
+    {{end}}
+
 
     <div class="forum-table-wrapper">
         <table class="forum-table">

@@ -32,7 +32,6 @@
             {{end}}
 
             <form action="/checklogin" method="post" class="auth-form">
-                {{ $badCreds := eq .AccountError "Email ou mot de passe incorrect. Veuillez réessayer." }}
 
                 <div class="form-group">
                     <label for="email_Username">E-mail ou nom d'utilisateur :</label>
@@ -47,23 +46,14 @@
                     <a href="/forgot-password" class="forgot-link" style="font-size: 0.8rem; display: block; margin-top: 5px;">Mot de passe oublié ?</a>
                 </div>
 
-                {{if $badCreds}}
-                    <div class="alert success" style="color: #e47c3c; margin-bottom: 15px; font-weight: 600;">
-                        {{.AccountError}}
-                    </div>
-                {{end}}
-
                 <button type="submit" class="btn-black">Connexion</button>
             </form>
 
             <!-- <form action="/register" method="post" class="btn-row">
                 <button type="submit" class="btn secondary">Créer un compte</button>
             </form> -->
-
-            {{ if or (eq .AccountError "Compte supprimé avec succès.") (eq .AccountError "Déconnecté avec succès.") (eq .AccountError "Mot de passe modifié avec succès.") }}
-                <div class="alert success">{{.AccountError}}</div>
-            {{ end }}
         <!-- </section> -->
+        </div>
     </main>
 
     {{template "footer" .}}

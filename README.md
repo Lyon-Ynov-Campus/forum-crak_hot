@@ -5,8 +5,7 @@ First commit
 Note :
 
 - Suppression de tout lié au user au delete
-- Système mdp oublié
-- erreur un seul endroit dans account
-- Verif le DBid ok dans tout les moyens de connexions
+- Système mdp oublié déployé
+- Retiré placeholder email ?
 
 Commit bisard en abc

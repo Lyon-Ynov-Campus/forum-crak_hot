@@ -15,7 +15,7 @@ func checkEditedPasswordCharacters(userInfos *UserInfos) {
 	var CPC_hasUpper = regexp.MustCompile(`[A-Z]`)
 	var CPC_hasLower = regexp.MustCompile(`[a-z]`)
 	var CPC_hasDigit = regexp.MustCompile(`[0-9]`)
-	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\]^_{|}~]`)
+	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\\]^_{|}~]`)
 
 	if len(userInfos.EditedPassword) < 12 ||
 		!allowedCharacters.MatchString(userInfos.EditedPassword) ||
@@ -23,7 +23,7 @@ func checkEditedPasswordCharacters(userInfos *UserInfos) {
 		!CPC_hasLower.MatchString(userInfos.EditedPassword) ||
 		!CPC_hasDigit.MatchString(userInfos.EditedPassword) ||
 		!hasSpecial.MatchString(userInfos.EditedPassword) {
-		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères (12 caractères, Maj, Min, Chiffre, Spécial)."
+		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus."
 	}
 }
 
@@ -36,6 +36,22 @@ func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 	if userInfos.EditedUsername == "" {
 		return
 	}
+
+	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
+	var usernameCharIsOk = true
+
+	for _, charac := range userInfos.EditedUsername {
+		if strings.ContainsRune(checkUsernameChar, charac) {
+			usernameCharIsOk = false
+			break
+		}
+	}
+
+	if !usernameCharIsOk {
+		userInfos.AccountError = "Le seul caractère spécial autorisé est _ ."
+		return
+	}
+
 	_, err := db.Exec("UPDATE Users SET username=? WHERE email=?", userInfos.EditedUsername, userInfos.Email)
 	if err != nil {
 		userInfos.AccountError = "Ce pseudo est déjà utilisé."
@@ -49,6 +65,13 @@ func dataEditEmail(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 	if userInfos.EditedEmail == "" {
 		return
 	}
+	var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+
+	if !emailRegex.MatchString(userInfos.EditedEmail) {
+		userInfos.AccountError = "Le format du mail est incorrecte. Veuillez réessayer"
+		return
+	}
+
 	_, err := db.Exec("UPDATE Users SET email=? WHERE username=?", userInfos.EditedEmail, userInfos.Username)
 	if err != nil {
 		userInfos.AccountError = "Cette adresse email est déjà utilisée."

@@ -25,8 +25,8 @@
         </div>
 
         <div class="search-bar-container">
-            <form action="/search" method="GET" style="display: flex; width: 100%; align-items: center;">
-                <input type="text" name="q" placeholder="Rechercher un sujet ou un piment..." class="search-input">
+            <form action="/forum" method="GET" style="display: flex; width: 100%; align-items: center;">
+                <input type="text" name="q" placeholder="Rechercher un sujet ou un piment..." class="search-input" value="{{if .Query}}{{.Query}}{{end}}" onclick="this.select();">
                 <button type="submit" style="background: none; border: none; color: #666; cursor: pointer; margin-left: -30px;">
                     <i class="fa fa-search"></i>
                 </button>

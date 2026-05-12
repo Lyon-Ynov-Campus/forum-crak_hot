@@ -19,16 +19,18 @@ func loginHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		http.Error(w, "Erreur lors du chargement de la page", http.StatusInternalServerError)
 		return
 	}
-	
+
 	resetSent := r.URL.Query().Get("reset_sent") == "true"
 	data := struct {
 		*UserInfos
 		IsConnected bool
 		ResetSent   bool
+		Query       string
 	}{
 		UserInfos:   userInfos,
 		IsConnected: IsConnected(r),
 		ResetSent:   resetSent,
+		Query:       "",
 	}
 	tmpl.ExecuteTemplate(w, "login.html", data)
 }
@@ -54,9 +56,11 @@ func registerHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfo
 	data := struct {
 		*UserInfos
 		IsConnected bool
+		Query       string
 	}{
 		UserInfos:   userInfos,
 		IsConnected: IsConnected(r),
+		Query:       "",
 	}
 	tmpl.ExecuteTemplate(w, "register.html", data)
 }
@@ -73,9 +77,9 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 	userInfos.Username, userInfos.Email = "", ""
 	userInfos.IsConnected = false
 	userInfos.AccountError = ""
-	
+
 	SetFlash(w, "success", "Déconnecté avec succès.")
-	
+
 	http.SetCookie(w, &http.Cookie{
 		Name:   "session_token",
 		Value:  "",
@@ -86,43 +90,45 @@ func logoutHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos)
 }
 
 func editaccountHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-    user := GetUserFromSession(r)
-    if !user.IsConnected {
-        http.Redirect(w, r, "/login", http.StatusSeeOther)
-        return
-    }
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 
-    LoadFlash(w, r, user)
-    
-    // On récupère les données pour le profil (la partie de ta collègue)
-    userID := GetUserID(r)
-    myPosts, _ := GetUserPosts(userID)
-    myComments, _ := GetUserCom(userID)
+	LoadFlash(w, r, user)
 
-    pp, err := getUserPP(user.Email)
-    user.LoadedPP = ""
-    if err == nil {
-        user.LoadedPP = pp
-    }
+	userID := GetUserID(r)
+	myPosts, _ := GetUserPosts(userID)
+	myComments, _ := GetUserCom(userID)
 
-    tmpl, err := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
-    if err != nil {
-        log.Printf("Erreur template account : %v", err)
-        return
-    }
+	pp, err := getUserPP(user.Email)
+	user.LoadedPP = ""
+	if err == nil {
+		user.LoadedPP = pp
+	}
 
-    data := struct {
-        *UserInfos
-        Page     string
-        Posts    []Post
-        Comments []Com
-    }{
-        UserInfos: user,
-        Page:      "account",
-        Posts:    myPosts,
-        Comments: myComments,
-    }
-    tmpl.ExecuteTemplate(w, "account.html", data)
+	tmpl, err := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
+	if err != nil {
+		log.Printf("Erreur template account : %v", err)
+		return
+	}
+
+	data := struct {
+		*UserInfos
+		Page     string
+		Posts    []Post
+		Comments []Com
+		Query    string
+	}{
+		UserInfos: user,
+		Page:      "account",
+		Posts:     myPosts,
+		Comments:  myComments,
+		Query:     "",
+	}
+
+	tmpl.ExecuteTemplate(w, "account.html", data)
 }
 
 func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
@@ -136,7 +142,7 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		return
 	}
 
-	err := r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20) // 10MB max
 	if err != nil {
 		SetFlash(w, "error", "Erreur lors de l'upload.")
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
@@ -153,7 +159,7 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 
 	ext := strings.ToLower(filepath.Ext(handler.Filename))
 	if ext != ".png" && ext != ".jpg" && ext != ".jpeg" {
-		SetFlash(w, "error", "Format non supporté (Utilisez PNG ou JPG).") 
+		SetFlash(w, "error", "Format non supporté (Utilisez PNG ou JPG).")
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
 	}
@@ -177,7 +183,7 @@ func addPPHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 
 	ppURL := "/static/pp/" + filename
 	updateUserPP(userInfos.Email, ppURL)
-	
+
 	SetFlash(w, "success", "Photo de profil mise à jour.")
 	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 }

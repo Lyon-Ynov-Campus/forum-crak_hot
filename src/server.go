@@ -52,35 +52,35 @@ func StartServer() {
 	http.HandleFunc("/coup-de-coeur", HeartHandler)
 
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		loginHandler(w, r, &userInfos) 
+		loginHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/checklogin", func(w http.ResponseWriter, r *http.Request) {
-		checkloginHandler(w, r, &userInfos) 
+		checkloginHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		registerHandler(w, r, &userInfos) 
+		registerHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/checkregister", func(w http.ResponseWriter, r *http.Request) {
-		checkregisterHandler(w, r, &userInfos) 
+		checkregisterHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
-		logoutHandler(w, r, &userInfos) 
+		logoutHandler(w, r, &userInfos)
 	})
 
 	http.HandleFunc("/editaccount", func(w http.ResponseWriter, r *http.Request) {
 		if userInfos.Email != "" {
-			userInfos.LoadedPP, _ = getUserPP(userInfos.Email) 
+			userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
 		}
-		editaccountHandler(w, r, &userInfos) 
+		editaccountHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/editusername", func(w http.ResponseWriter, r *http.Request) {
-		editusernameHandler(w, r, &userInfos) 
+		editusernameHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/editemail", func(w http.ResponseWriter, r *http.Request) {
-		editemailHandler(w, r, &userInfos) 
+		editemailHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/editpassword", func(w http.ResponseWriter, r *http.Request) {
-		editpasswordHandler(w, r, &userInfos) 
+		editpasswordHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/deleteaccount", func(w http.ResponseWriter, r *http.Request) {
 		deleteaccountHandler(w, r, &userInfos)
@@ -96,29 +96,29 @@ func StartServer() {
 	//post
 	http.HandleFunc("/postCreate", postCreate)
 	/*http.HandleFunc("/postCreate", func(w http.ResponseWriter, r *http.Request) {
-        // On s'assure que la PP globale est à jour
-        if userInfos.Email != "" {
-            userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
-        }
-        postCreate(w, r) 
-    })*/
+	    // On s'assure que la PP globale est à jour
+	    if userInfos.Email != "" {
+	        userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+	    }
+	    postCreate(w, r)
+	})*/
 	http.HandleFunc("/postUpdate", postUpdate)
 	http.HandleFunc("/postDelete", postDelete)
-	 http.HandleFunc("/post", seeOnePost)   //post indeivudel du membre
+	http.HandleFunc("/post", seeOnePost) //post indeivudel du membre
 	/*http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
-        if userInfos.Email != "" {
-            userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
-        }
-        seeOnePost(w, r)
-    })*/
-	 http.HandleFunc("/posts", seeAllPosts) //tout les post afficher
+	    if userInfos.Email != "" {
+	        userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+	    }
+	    seeOnePost(w, r)
+	})*/
+	http.HandleFunc("/posts", seeAllPosts) //tout les post afficher
 	/*http.HandleFunc("/posts", func(w http.ResponseWriter, r *http.Request) {
-        if userInfos.Email != "" {
-            userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
-        }
-        seeAllPosts(w, r)
-    })*/
-	http.HandleFunc("/myPosts", myPosts)   //tout MES psot afficher
+	    if userInfos.Email != "" {
+	        userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+	    }
+	    seeAllPosts(w, r)
+	})*/
+	http.HandleFunc("/myPosts", myPosts) //tout MES psot afficher
 	// com
 	http.HandleFunc("/comCreate", comCreate)
 	http.HandleFunc("/comUpdate", comUpdate)
