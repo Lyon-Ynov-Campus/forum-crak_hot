@@ -1,7 +1,5 @@
 {{template "header" .}}
 
-
-
 <main class="container">
     <h3 style="color: #666; margin-top: 20px;">Explorer par Catégories</h3>
     <div class="category-grid">
@@ -45,8 +43,66 @@
     {{if .Query}}
     <p style="color:#aaa; margin-bottom:10px;">
     Résultats pour : "<strong>{{.Query}}</strong>"
-</p>
-{{end}}
+    </p>
+    <form method="get" action="/forum" id="epicFilterForm">
+            <input type="hidden" name="q" value="{{.Query}}">
+            
+            <div class="epic-filter-bar" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; background: #121212; padding: 10px; border-radius: 6px; border: 1px solid #202020;">
+                <div class="epic-dropdown">
+                    <button type="button" class="epic-dropbtn" onclick="toggleEpicDropdown('drop-date')">
+                        Date {{if .FDate}}• 1{{end}} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 6px;"></i>
+                    </button>
+                    <div id="drop-date" class="epic-dropdown-content">
+                        <label style="color: #888; font-size: 11px; display: block; margin-bottom: 8px;">PUBLIÉ LE</label>
+                        <input type="date" name="fDate" value="{{.FDate}}" onchange="submitEpicFilters()" style="width: 100%; padding: 8px; border-radius: 4px; background: #202020; border: 1px solid #333; color: #fff; box-sizing: border-box; font-size: 13px;">
+                    </div>
+                </div>
+
+                <div class="epic-dropdown">
+                    <button type="button" class="epic-dropbtn" onclick="toggleEpicDropdown('drop-likes')">
+                        Likes {{if and .MinL (gt .MinL 0)}}• 1{{end}} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 6px;"></i>
+                    </button>
+                    <div id="drop-likes" class="epic-dropdown-content">
+                        <label style="color: #888; font-size: 11px; display: block; margin-bottom: 8px;">LIKES MINIMUM 🌶️</label>
+                        <input type="number" name="minL" value="{{if .MinL}}{{.MinL}}{{else}}0{{end}}" min="0" placeholder="0" style="width: 100%; padding: 8px; border-radius: 4px; background: #202020; border: 1px solid #333; color: #fff; box-sizing: border-box; font-size: 13px;">
+                        <button type="button" onclick="submitEpicFilters()" style="width:100%; margin-top:10px; padding:6px; background:#ff4500; border:none; color:#fff; border-radius:4px; font-weight:bold; font-size:11px; cursor:pointer;">OK</button>
+                    </div>
+                </div>
+
+                <div class="epic-dropdown">
+                    <button type="button" class="epic-dropbtn" onclick="toggleEpicDropdown('drop-coms')">
+                        Discussions {{if and .MinC (gt .MinC 0)}}• 1{{end}} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 6px;"></i>
+                    </button>
+                    <div id="drop-coms" class="epic-dropdown-content">
+                        <label style="color: #888; font-size: 11px; display: block; margin-bottom: 8px;">RÉPONSES MINIMUM 💬</label>
+                        <input type="number" name="minC" value="{{if .MinC}}{{.MinC}}{{else}}0{{end}}" min="0" placeholder="0" style="width: 100%; padding: 8px; border-radius: 4px; background: #202020; border: 1px solid #333; color: #fff; box-sizing: border-box; font-size: 13px;">
+                        <button type="button" onclick="submitEpicFilters()" style="width:100%; margin-top:10px; padding:6px; background:#ff4500; border:none; color:#fff; border-radius:4px; font-weight:bold; font-size:11px; cursor:pointer;">OK</button>
+                    </div>
+                </div>
+
+                <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+                    <span style="color: #8f8f8f; font-size: 13px;">Trier par :</span>
+                    <select name="sort" onchange="submitEpicFilters()" style="padding: 8px 14px; border-radius: 4px; background: #121212; border: 1px solid #202020; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer;">
+                        <option value="date_desc" {{if eq .Sort "date_desc"}}selected{{end}}>Pertinence / Récents</option>
+                        <option value="date_asc" {{if eq .Sort "date_asc"}}selected{{end}}>Anciens</option>
+                        <option value="likes_desc" {{if eq .Sort "likes_desc"}}selected{{end}}>Plus aimés</option>
+                        <option value="likes_asc" {{if eq .Sort "likes_asc"}}selected{{end}}>Moins aimés</option>
+                        <option value="com_desc" {{if eq .Sort "com_desc"}}selected{{end}}>Plus commentés</option>
+                        <option value="com_asc" {{if eq .Sort "com_asc"}}selected{{end}}>Moins commentés</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        {{if or .FDate (and .MinL (gt .MinL 0)) (and .MinC (gt .MinC 0))}}
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 20px;">
+            {{if .FDate}}<span class="epic-tag">Date: {{.FDate}} <a href="/forum?q={{.Query}}&minL={{.MinL}}&minC={{.MinC}}&sort={{.Sort}}">×</a></span>{{end}}
+            {{if and .MinL (gt .MinL 0)}}<span class="epic-tag">🌶️ ≥ {{.MinL}} <a href="/forum?q={{.Query}}&fDate={{.FDate}}&minC={{.MinC}}&sort={{.Sort}}">×</a></span>{{end}}
+            {{if and .MinC (gt .MinC 0)}}<span class="epic-tag">💬 ≥ {{.MinC}} <a href="/forum?q={{.Query}}&fDate={{.FDate}}&minL={{.MinL}}&sort={{.Sort}}">×</a></span>{{end}}
+            <a href="/forum?q={{.Query}}&sort={{.Sort}}" class="epic-btn-reset">Réinitialiser</a>
+        </div>
+        {{end}}
+    {{end}}
 
 
 <div class="forum-table-wrapper">
@@ -80,18 +136,19 @@
             </tbody>
         </table>
     </div>
+    {{if not .Query}}
     <div class="sort-bar">
         <form method="get" class="sort-form" style="display: flex; gap: 10px; align-items: center;">
     
-            <!-- Menu déroulant -->
+             Menu déroulant
             <select name="sort">
                 <option value="">-- Trier par --</option>
-                <option value="date_desc">Date (récent -> ancien)</option>
-                <option value="date_asc">Date (ancien -> récent)</option>
-                <option value="likes_desc">Likes (plus -> moins)</option>
-                <option value="likes_asc">Likes (moins -> plus)</option>
-                <option value="com_desc">Commentaires (plus -> moins)</option>
-                <option value="com_asc">Commentaires (moins -> plus)</option>
+                <option value="date_desc" {{if eq .Sort "date_desc"}}selected{{end}}>Date (récent -> ancien)</option>
+                <option value="date_asc" {{if eq .Sort "date_asc"}}selected{{end}}>Date (ancien -> récent)</option>
+                <option value="likes_desc" {{if eq .Sort "likes_desc"}}selected{{end}}>Likes (plus -> moins)</option>
+                <option value="likes_asc" {{if eq .Sort "likes_asc"}}selected{{end}}>Likes (moins -> plus)</option>
+                <option value="com_desc" {{if eq .Sort "com_desc"}}selected{{end}}>Commentaires (plus -> moins)</option>
+                <option value="com_asc" {{if eq .Sort "com_asc"}}selected{{end}}>Commentaires (moins -> plus)</option>
             </select>
     
             <input type="hidden" name="q" value="{{.Query}}">
@@ -102,6 +159,82 @@
     
         </form>
     </div>
+    {{end}}
+
+    
+    <!-- <div class="sort-bar" style="margin-top: 20px;">
+        <form method="get" class="sort-form" style="display: flex; gap: 10px; align-items: center;">
+            <select name="sort">
+                <option value="">-- Trier par --</option>
+                <option value="date_desc" {{if eq .Sort "date_desc"}}selected{{end}}>Date (récent -> ancien)</option>
+                <option value="date_asc" {{if eq .Sort "date_asc"}}selected{{end}}>Date (ancien -> récent)</option>
+                <option value="likes_desc" {{if eq .Sort "likes_desc"}}selected{{end}}>Likes (plus -> moins)</option>
+                <option value="likes_asc" {{if eq .Sort "likes_asc"}}selected{{end}}>Likes (moins -> plus)</option>
+                <option value="com_desc" {{if eq .Sort "com_desc"}}selected{{end}}>Commentaires (plus -> moins)</option>
+                <option value="com_asc" {{if eq .Sort "com_asc"}}selected{{end}}>Commentaires (moins -> plus)</option>
+            </select>
+            <button type="submit" class="btn-black">Trier</button>
+            <a href="/forum" class="btn-black">Réinitialiser</a>
+        </form>
+    </div> -->
+    
 </main>
+
+<script>
+window.onclick = function(event) {
+    if (!event.target.matches('.epic-dropbtn') && !event.target.closest('.epic-dropdown-content')) {
+        var dropdowns = document.getElementsByClassName("epic-dropdown-content");
+        for (var i = 0; i < dropdowns.length; i++) {
+            dropdowns[i].classList.remove('show');
+        }
+    }
+}
+
+function toggleEpicDropdown(id) {
+    var element = document.getElementById(id);
+    var wasShown = element.classList.contains('show');
+    var dropdowns = document.getElementsByClassName("epic-dropdown-content");
+    for (var i = 0; i < dropdowns.length; i++) {
+        dropdowns[i].classList.remove('show');
+    }
+    if (!wasShown) {
+        element.classList.add('show');
+    }
+}
+
+function submitEpicFilters() {
+    document.getElementById('epicFilterForm').submit();
+}
+</script>
+
+<style>
+    .epic-dropbtn {
+        background: #18181c; color: #fff; border: 1px solid #2a2a30;
+        padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 4px;
+        cursor: pointer; display: flex; align-items: center; transition: all 0.2s;
+    }
+    .epic-dropbtn:hover { border-color: #444450; background: #1f1f24; }
+    .epic-dropdown { position: relative; display: inline-block; }
+    .epic-dropdown-content {
+        display: none; position: absolute; background-color: #16161a;
+        min-width: 200px; border: 1px solid #2a2a30; border-radius: 4px;
+        padding: 15px; z-index: 100; margin-top: 6px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+    }
+    .epic-dropdown-content.show { display: block; }
+    .epic-tag {
+        background: #202024; color: #fff; padding: 6px 12px; border-radius: 20px;
+        font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #30303a;
+    }
+    .epic-tag a { color: #888; text-decoration: none; font-weight: bold; margin-left: 2px; }
+    .epic-tag a:hover { color: #ff4500; }
+    .epic-btn-reset {
+        background: #202024; color: #fff; border: 1px solid #30303a; padding: 6px 14px;
+        font-size: 12px; font-weight: bold; border-radius: 20px; text-decoration: none; transition: background 0.2s;
+    }
+    .epic-btn-reset:hover { background: #ff4500; border-color: #ff4500; }
+    .active-tab::after {
+        content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background-color: #ff4500; border-radius: 2px;
+    }
+</style>
 
 {{template "footer" .}}
