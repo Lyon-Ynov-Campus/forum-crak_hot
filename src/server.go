@@ -51,6 +51,7 @@ func StartServer() {
 	http.HandleFunc("/reseau", NetworkHandler)
 	http.HandleFunc("/coup-de-coeur", HeartHandler)
 
+	
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		loginHandler(w, r, &userInfos)
 	})

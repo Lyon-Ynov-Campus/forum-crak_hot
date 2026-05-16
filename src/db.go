@@ -428,3 +428,48 @@ func updateUserPP(email string, ppURL string) error {
 	_, err := db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
 	return err
 }
+
+
+func GetSearchSortWithFilters(search, sort, filterDate string, minLikes, minComs int) []Post {
+	query := `
+        SELECT 
+            p.id, p.titre, p.contenu, p.categorie, p.date_publication, p.user_id,
+            (SELECT COUNT(*) FROM Like WHERE post_id = p.id) AS likeCount,
+            (SELECT COUNT(*) FROM Commentaire WHERE post_id = p.id) AS comCount
+        FROM Post p
+        WHERE p.titre LIKE ?`
+
+	var args []interface{}
+	args = append(args, "%"+search+"%")
+
+	if filterDate != "" {
+        query += " AND p.date_publication = ?"
+        args = append(args, filterDate)
+    }
+
+	query += " GROUP BY p.id HAVING likeCount >= ? AND comCount >= ?"
+    args = append(args, minLikes, minComs)
+
+	switch sort {
+    case "date_asc": query += " ORDER BY p.date_publication ASC"
+    case "date_desc": query += " ORDER BY p.date_publication DESC"
+    case "likes_desc": query += " ORDER BY likeCount DESC"
+    case "com_desc": query += " ORDER BY comCount DESC"
+    default: query += " ORDER BY p.id DESC"
+    }
+
+	rows, err := db.Query(query, args...)
+    if err != nil {
+        fmt.Println("Erreur SQL:", err)
+        return nil
+    }
+    defer rows.Close()
+
+    var posts []Post
+    for rows.Next() {
+        var p Post
+        rows.Scan(&p.ID, &p.Titre, &p.Contenu, &p.Categorie, &p.DatePublication, &p.UserID, &p.CountLikes, &p.CountCom)
+        posts = append(posts, p)
+    }
+    return posts
+}

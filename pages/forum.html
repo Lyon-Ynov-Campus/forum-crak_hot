@@ -37,9 +37,9 @@
         {{end}}
     </div>
     
-    <div class="filter-tabs">
-        <a class="filter-link active-filter">TOP</a>
-        <a class="filter-link">RECENTS</a>
+    <div class="filter-tabs" style="display: flex; gap: 20px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">
+        <a href="/forum?sort=likes_desc{{if .Query}}&q={{.Query}}{{end}}" class="filter-link {{if eq .Sort "likes_desc"}}active-tab{{end}}" style="text-decoration: none; color: inherit; position: relative; padding-bottom: 5px;">TOP</a>
+        <a href="/forum?sort=date_desc{{if .Query}}&q={{.Query}}{{end}}" class="filter-link {{if eq .Sort "date_desc"}}active-tab{{end}}" style="text-decoration: none; color: inherit; position: relative; padding-bottom: 5px;">RECENTS</a>
     </div>
     
     {{if .Query}}
@@ -50,28 +50,23 @@
 
 
 <div class="forum-table-wrapper">
-    <table class="forum-table">
+        <table class="forum-table">
             <thead>
                 <tr>
-                    <th>SUJET</th>
-                    <th>AUTEUR</th>
-                    <th>CATÉGORIE</th>
-                    <th>COMMENTAIRES</th>
-                    <th>DATE</th>
-                    <th>LIKES</th>
+                    <th>Sujet</th>
+                    <th>Auteur</th>
+                    <th>Catégorie</th>
+                    <th><a href="/forum?sort={{if eq .Sort "com_desc"}}com_asc{{else}}com_desc{{end}}{{if .Query}}&q={{.Query}}{{end}}" style="color:white; text-decoration:none;">Réponses {{if eq .Sort "com_desc"}}▼{{else if eq .Sort "com_asc"}}▲{{else}}↕{{end}}</a></th>
+                    <th><a href="/forum?sort={{if eq .Sort "date_desc"}}date_asc{{else}}date_desc{{end}}{{if .Query}}&q={{.Query}}{{end}}" style="color:white; text-decoration:none;">Date {{if eq .Sort "date_desc"}}▼{{else if eq .Sort "date_asc"}}▲{{else}}↕{{end}}</a></th>
+                    <th><a href="/forum?sort={{if eq .Sort "likes_desc"}}likes_asc{{else}}likes_desc{{end}}{{if .Query}}&q={{.Query}}{{end}}" style="color:white; text-decoration:none;">Likes {{if eq .Sort "likes_desc"}}▼{{else if eq .Sort "likes_asc"}}▲{{else}}↕{{end}}</a></th>
                 </tr>
             </thead>
             <tbody>
                 {{range .Posts}}
                 <tr>
-                    <td>
-                        <a href="/post?id={{.ID}}" class="subject-title">{{.Titre}}</a>
-                    </td>
+                    <td><a href="/post?id={{.ID}}" class="subject-title">{{.Titre}}</a></td>
                     <td class="text-muted">{{.Author}}</td>
-                    <td class="text-muted">
-                        <span class="subject-category">{{.Categorie}}</span>
-                    </td>
-                    <td class="text-muted">{{.ComCount}}</td>
+                    <td class="text-muted">{{.Categorie}}</td> <td class="text-muted">{{.ComCount}}</td>
                     <td class="text-muted">{{.DatePublication}}</td>
                     <td class="text-muted">🌶️ {{.LikeCount}}</td>
                 </tr>

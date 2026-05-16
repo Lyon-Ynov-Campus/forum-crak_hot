@@ -64,6 +64,10 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 
 	search := r.URL.Query().Get("q")  //ajout pr tri
 	sort := r.URL.Query().Get("sort") //ajout pr tri
+	fDate := r.URL.Query().Get("fDate")
+	minL, _ := strconv.Atoi(r.URL.Query().Get("minL"))
+	minC, _ := strconv.Atoi(r.URL.Query().Get("minC"))
+
 	user := GetUserFromSession(r)
 	LoadFlash(w, r, user)
 
@@ -92,22 +96,41 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	posts = ApplyTri(posts, sort) //ajout pr tri
 
 	var postsAllInfos []PostAllInfos
-
 	for _, p := range posts {
 		pseudo, _ := GetPseudoByUserID(p.UserID)
-		comCount, _ := CountCom(p.ID)
-		likeCount, _ := CountLikes(p.ID)
+		p.CountCom, _ = CountCom(p.ID)
+		p.CountLikes, _ = CountLikes(p.ID)
+
+		if fDate != "" && p.DatePublication != fDate {
+			continue
+		}
+		if p.CountCom < minC {
+			continue
+		}
+		if p.CountLikes < minL {
+			continue
+		}
 
 		postsAllInfos = append(postsAllInfos, PostAllInfos{
 			ID:              p.ID,
 			Titre:           p.Titre,
 			Author:          pseudo,
 			Categorie:       p.Categorie,
-			ComCount:        comCount,
-			LikeCount:       likeCount,
+			ComCount:        p.CountCom,
+			LikeCount:       p.CountLikes,
 			DatePublication: p.DatePublication,
 		})
 	}
+
+
+	if sort == "likes_desc" || sort == "likes_asc" {
+		postsAllInfos = trierPostsParLikes(postsAllInfos, sort)
+	} else if sort == "com_desc" || sort == "com_asc" {
+		postsAllInfos = trierPostsParCommentaires(postsAllInfos, sort)
+	} else if sort == "date_desc" || sort == "date_asc" {
+		postsAllInfos = trierPostsParDate(postsAllInfos, sort)
+	}
+
 
 	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
 
@@ -118,6 +141,9 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		*UserInfos
 		Page  string
 		Query string
+		MinL  int
+		MinC  int
+		FDate string
 	}{
 		Posts:     postsAllInfos,
 		Search:    search,
@@ -125,6 +151,9 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		UserInfos: user,
 		Page:      "home",
 		Query:     query,
+		MinL:      minL,
+		MinC:      minC,
+		FDate:     fDate,
 	}
 
 	tmpl.ExecuteTemplate(w, "forum.html", data)
@@ -141,16 +170,77 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	displayTitle := strings.ReplaceAll(slug, "-", " ")
 	displayTitle = strings.Title(displayTitle)
 
+	sort := r.URL.Query().Get("sort")
+	search := r.URL.Query().Get("q")
+	fDate := r.URL.Query().Get("fDate")
+	minL, _ := strconv.Atoi(r.URL.Query().Get("minL"))
+	minC, _ := strconv.Atoi(r.URL.Query().Get("minC"))
+
+	posts, _ := GetAllPosts()
+
+	var postsInfos []PostAllInfos
+	for _, p := range posts {
+		if !strings.EqualFold(p.Categorie, displayTitle) {
+			continue
+		}
+
+		if search != "" && !strings.Contains(strings.ToLower(p.Titre), strings.ToLower(search)) {
+			continue
+		}
+
+		p.CountCom, _ = CountCom(p.ID)
+		p.CountLikes, _ = CountLikes(p.ID)
+
+		if fDate != "" && p.DatePublication != fDate {
+			continue
+		}
+		if p.CountCom < minC {
+			continue
+		}
+		if p.CountLikes < minL {
+			continue
+		}
+
+		author, _ := GetPseudoByUserID(p.UserID)
+		postsInfos = append(postsInfos, PostAllInfos{
+			ID:              p.ID,
+			Titre:           p.Titre,
+			Author:          author,
+			Categorie:       p.Categorie,
+			ComCount:        p.CountCom,
+			LikeCount:       p.CountLikes,
+			DatePublication: p.DatePublication,
+		})
+	}
+
+	if sort == "likes_desc" || sort == "likes_asc" {
+		postsInfos = trierPostsParLikes(postsInfos, sort)
+	} else if sort == "com_desc" || sort == "com_asc" {
+		postsInfos = trierPostsParCommentaires(postsInfos, sort)
+	} else if sort == "date_desc" || sort == "date_asc" {
+		postsInfos = trierPostsParDate(postsInfos, sort)
+	}
+
 	data := struct {
 		Title string
 		*UserInfos
 		Page  string
 		Query string
+		Posts []PostAllInfos
+		Sort  string
+		MinL  int
+		MinC  int
+		FDate string
 	}{
 		Title:     displayTitle,
 		UserInfos: user,
 		Page:      "category",
-		Query:     "",
+		Query:     search,
+		Posts:     postsInfos,
+		Sort:      sort,
+		MinL:      minL,
+		MinC:      minC,
+		FDate:     fDate,
 	}
 
 	tmpl, err := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
@@ -527,13 +617,24 @@ type PostAllInfos struct {
 
 func seeAllPosts(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromSession(r)
-
 	pp, _ := getUserPP(user.Email)
 	user.LoadedPP = pp
-
 	LoadFlash(w, r, user)
 
-	posts, err := GetAllPosts()
+	search := r.URL.Query().Get("q")
+	sort := r.URL.Query().Get("sort")
+	fDate := r.URL.Query().Get("fDate")
+	minL, _ := strconv.Atoi(r.URL.Query().Get("minL"))
+	minC, _ := strconv.Atoi(r.URL.Query().Get("minC"))
+
+	categoryFilter := ""
+		if strings.HasPrefix(r.URL.Path, "/categories/") {
+			categoryFilter = strings.TrimPrefix(r.URL.Path, "/categories/")
+		} else {
+			categoryFilter = r.URL.Query().Get("cat")
+	}
+	
+    posts, err := GetAllPosts()
 	if err != nil {
 		fmt.Println("Erreur SQL posts:", err)
 		posts = []Post{}
@@ -542,9 +643,23 @@ func seeAllPosts(w http.ResponseWriter, r *http.Request) {
 	var postsInfos []PostAllInfos
 	for _, p := range posts {
 		author, _ := GetPseudoByUserID(p.UserID)
-		comCount, _ := CountCom(p.ID)
-		likeCount, _ := CountLikes(p.ID)
 
+		if categoryFilter != "" && !strings.EqualFold(p.Categorie, categoryFilter) {
+			continue
+		}
+		if search != "" && !strings.Contains(strings.ToLower(p.Titre), strings.ToLower(search)) {
+			continue
+		}
+		if fDate != "" && p.DatePublication != fDate {
+			continue
+		}
+		if p.CountCom < minC {
+			continue
+		}
+		if p.CountLikes < minL {
+			continue
+		}
+		
 		postsInfos = append(postsInfos, PostAllInfos{
 			ID:              p.ID,
 			Titre:           p.Titre,
@@ -552,9 +667,35 @@ func seeAllPosts(w http.ResponseWriter, r *http.Request) {
 			Categorie:       p.Categorie,
 			DatePublication: p.DatePublication,
 			Author:          author,
-			ComCount:        comCount,
-			LikeCount:       likeCount,
+			ComCount:        p.CountCom,
+			LikeCount:       p.CountLikes,
 		})
+	}
+
+	if sort == "likes_desc" {
+		for i := 0; i < len(postsInfos); i++ {
+			for j := i + 1; j < len(postsInfos); j++ {
+				if postsInfos[i].LikeCount < postsInfos[j].LikeCount {
+					postsInfos[i], postsInfos[j] = postsInfos[j], postsInfos[i]
+				}
+			}
+		}
+	} else if sort == "com_desc" {
+		for i := 0; i < len(postsInfos); i++ {
+			for j := i + 1; j < len(postsInfos); j++ {
+				if postsInfos[i].ComCount < postsInfos[j].ComCount {
+					postsInfos[i], postsInfos[j] = postsInfos[j], postsInfos[i]
+				}
+			}
+		}
+	} else if sort == "date_desc" {
+		for i := 0; i < len(postsInfos); i++ {
+			for j := i + 1; j < len(postsInfos); j++ {
+				if postsInfos[i].DatePublication < postsInfos[j].DatePublication {
+					postsInfos[i], postsInfos[j] = postsInfos[j], postsInfos[i]
+				}
+			}
+		}
 	}
 
 	tmpl, err := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
@@ -565,16 +706,24 @@ func seeAllPosts(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		Title string
-		Posts []PostAllInfos
 		*UserInfos
 		Page  string
 		Query string
+		Posts []PostAllInfos
+		Sort  string
+		MinL  int
+		MinC  int
+		FDate string
 	}{
 		Title:     "Tous les posts",
-		Posts:     postsInfos,
 		UserInfos: user,
 		Page:      "posts",
-		Query:     "",
+		Query:     search,
+		Posts:     postsInfos,
+		Sort:      sort,
+		MinL:      minL,
+		MinC:      minC,
+		FDate:     fDate,
 	}
 
 	tmpl.ExecuteTemplate(w, "category.html", data)
@@ -766,4 +915,37 @@ func seeUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.ExecuteTemplate(w, "seeUser.html", data)
+}
+
+func trierPostsParLikes(p []PostAllInfos, order string) []PostAllInfos {
+	for i := 0; i < len(p); i++ {
+		for j := i + 1; j < len(p); j++ {
+			if order == "likes_desc" && p[i].LikeCount < p[j].LikeCount || order == "likes_asc" && p[i].LikeCount > p[j].LikeCount {
+				p[i], p[j] = p[j], p[i]
+			}
+		}
+	}
+	return p
+}
+
+func trierPostsParCommentaires(p []PostAllInfos, order string) []PostAllInfos {
+	for i := 0; i < len(p); i++ {
+		for j := i + 1; j < len(p); j++ {
+			if order == "com_desc" && p[i].ComCount < p[j].ComCount || order == "com_asc" && p[i].ComCount > p[j].ComCount {
+				p[i], p[j] = p[j], p[i]
+			}
+		}
+	}
+	return p
+}
+
+func trierPostsParDate(p []PostAllInfos, order string) []PostAllInfos {
+	for i := 0; i < len(p); i++ {
+		for j := i + 1; j < len(p); j++ {
+			if order == "date_desc" && p[i].DatePublication < p[j].DatePublication || order == "date_asc" && p[i].DatePublication > p[j].DatePublication {
+				p[i], p[j] = p[j], p[i]
+			}
+		}
+	}
+	return p
 }
