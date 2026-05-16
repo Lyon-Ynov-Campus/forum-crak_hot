@@ -54,6 +54,7 @@ func CreateDB() {
 		date_com TEXT,
 		user_id INTEGER,
 		post_id INTEGER,
+		parent_id INTEGER DEFAULT 0, --0 signifie que c'est un commentaire principal
 		FOREIGN KEY(user_id) REFERENCES Users(id) ON DELETE CASCADE,
 		FOREIGN KEY(post_id) REFERENCES Post(id) ON DELETE CASCADE
 	);
@@ -109,11 +110,12 @@ type Post struct {
 }
 
 type Com struct {
-	ID      int    `json:"id"`
-	Contenu string `json:"contenu"`
-	DateCom string `json:"date_com"`
-	UserID  int    `json:"user_id"`
-	PostID  int    `json:"post_id"`
+	ID      	int    `json:"id"`
+	Contenu		string `json:"contenu"`
+	DateCom		string `json:"date_com"`
+	UserID		int    `json:"user_id"`
+	PostID		int    `json:"post_id"`
+	ParentID	int		`json:"parent_id"`
 }
 
 func CreateUser(pseudo, email, motDePasse string) error {
@@ -256,9 +258,9 @@ func GetPseudoByUserID(id int) (string, error) {
 
 /* ===== Patie commentaires ===== */
 
-func CreateCom(contenu, dateCom string, userID, postID int) error {
-	_, err := db.Exec("INSERT INTO Commentaire (contenu, date_com, user_id, post_id) VALUES (?, ?, ?, ?)",
-		contenu, dateCom, userID, postID)
+func CreateCom(contenu, dateCom string, userID, postID int, parentID int) error {
+	_, err := db.Exec("INSERT INTO Commentaire (contenu, date_com, user_id, post_id, parent_id) VALUES (?, ?, ?, ?, ?)",
+		contenu, dateCom, userID, postID, parentID)
 	return err
 }
 
@@ -282,7 +284,7 @@ func DeleteCom(id int) error {
 }
 
 func GetComByPostID(postID int) ([]Com, error) {
-	rows, err := db.Query("SELECT id, contenu, date_com, user_id, post_id FROM Commentaire WHERE post_id = ?", postID)
+	rows, err := db.Query("SELECT id, contenu, date_com, user_id, post_id, parent_id FROM Commentaire WHERE post_id = ?", postID)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +292,7 @@ func GetComByPostID(postID int) ([]Com, error) {
 	var comments []Com
 	for rows.Next() {
 		var c Com
-		rows.Scan(&c.ID, &c.Contenu, &c.DateCom, &c.UserID, &c.PostID)
+		rows.Scan(&c.ID, &c.Contenu, &c.DateCom, &c.UserID, &c.PostID, &c.ParentID)
 		comments = append(comments, c)
 	}
 	return comments, nil

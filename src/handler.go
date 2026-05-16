@@ -555,9 +555,11 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 		pseudo, _ := GetPseudoByUserID(c.UserID)
 
 		comments = append(comments, ComNameAuthor{
-			Contenu: c.Contenu,
-			DateCom: c.DateCom,
-			Author:  pseudo,
+			ID:			c.ID,
+			Contenu: 	c.Contenu,
+			DateCom: 	c.DateCom,
+			Author: 	pseudo,
+			ParentID: 	c.ParentID,
 		})
 	}
 
@@ -571,37 +573,46 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 		liked = HasLiked(userID, postID)
 	}
 
+	isAuthor := false 
+	if userID != 0 && post.UserID == userID {
+		isAuthor = true
+	}
+
 	tmpl, _ := template.ParseFiles("pages/post.html", "pages/header.html", "pages/footer.html")
 
 	data := struct {
-		Post      Post
-		Comments  []ComNameAuthor
-		LikeCount int
-		ComCount  int
-		Author    string
-		Liked     bool
+		Post      	Post
+		Comments  	[]ComNameAuthor
+		LikeCount 	int
+		ComCount  	int
+		Author		string
+		Liked		bool
+		IsAuthor	bool
 		*UserInfos
-		Page  string
-		Query string
+		Page  		string
+		Query 		string
 	}{
-		Post:      post,
-		Comments:  comments,
-		LikeCount: likeCount,
-		ComCount:  comCount,
-		Author:    authorPseudo,
-		Liked:     liked,
-		UserInfos: user,
-		Page:      "post",
-		Query:     "",
+		Post:      	post,
+		Comments:  	comments,
+		LikeCount: 	likeCount,
+		ComCount:  	comCount,
+		Author:    	authorPseudo,
+		Liked:     	liked,
+		IsAuthor:	isAuthor,
+		UserInfos: 	user,
+		Page:      	"post",
+		Query:     	"",
 	}
 
 	tmpl.ExecuteTemplate(w, "post.html", data)
 }
 
 type ComNameAuthor struct {
-	Contenu string
-	DateCom string
-	Author  string
+	ID			int
+	Contenu 	string
+	DateCom 	string
+	Author  	string
+	ParentID	int
 }
 
 type PostAllInfos struct {
@@ -761,11 +772,19 @@ func comCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		contenu := r.FormValue("contenu")
 		postID, _ := strconv.Atoi(r.FormValue("post_id"))
+		parentID, _ := strconv.Atoi(r.FormValue("parent_id"))
 		date := time.Now().Format("2006-01-02")
+		
 
 		userID := GetUserID(r)
 
-		CreateCom(contenu, date, userID, postID)
+		post, err := GetPostByID(postID)
+		if err == nil && post.UserID == userID && parentID == 0 {
+			http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+			return
+		}
+
+		CreateCom(contenu, date, userID, postID, parentID)
 
 		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
 		return

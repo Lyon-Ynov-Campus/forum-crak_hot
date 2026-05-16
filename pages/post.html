@@ -15,42 +15,95 @@
             <p>{{.Post.Contenu}}</p>
         </div>
 
-        <form action="/likePost" method="post">
-            <input type="hidden" name="post_id" value="{{.Post.ID}}">
-            {{if .Liked}}
-                <button type="submit" class="btn-like">Retirer le like</button>
+        <div class="like-section" style="margin-bottom: 25px;">
+            {{if .IsAuthor}}
+                <span class="my-post-likes" style="display: inline-block; padding: 10px 15px; background: #1a1a1a; border-radius: 4px; color: #ff4500; font-weight: bold; border: 1px solid #2a2a2a; font-size: 14px;">
+                    🌶️ {{.LikeCount}} Score de piments
+                </span>
             {{else}}
-                <button type="submit" class="btn-like">Liker ({{.LikeCount}})</button>
+                <form action="/likePost" method="post">
+                    <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                    {{if .Liked}}
+                        <button type="submit" class="btn-like">Retirer le like</button>
+                    {{else}}
+                        <button type="submit" class="btn-like">Liker ({{.LikeCount}})</button>
+                    {{end}}
+                </form>
             {{end}}
-        </form>
+        </div>
 
         <div class="comment-section">
             <h2>Commentaires ({{.ComCount}})</h2>
 
-            {{if .Comments}}
-                {{range .Comments}}
-                    <div class="comment">
-                        <p><strong>{{.Author}}</strong> — {{.DateCom}}</p>
-                        <p>{{.Contenu}}</p>
-                    </div>
+            {{if $.Comments}}
+                {{$global := .}} 
+                
+                {{range $.Comments}}
+                    {{if eq .ParentID 0}}
+                        <div class="comment-block" style="margin-bottom: 20px; padding: 15px; background: #111; border-radius: 6px; border: 1px solid #222; text-align: left;">
+                            <p><strong>{{.Author}}</strong> — <span style="color: #666; font-size: 12px;">{{.DateCom}}</span></p>
+                            <p style="margin: 8px 0; color: #fff;">{{.Contenu}}</p>
+                            
+                            {{if $global.UserInfos.IsConnected}}
+                            <div style="text-align: right;">
+                                <button type="button" onclick="showReplyForm('reply-form-{{.ID}}')" style="background: none; border: none; color: #ff4500; cursor: pointer; font-size: 13px; font-weight: bold;">
+                                    <i class="fa fa-reply"></i> Répondre
+                                </button>
+                            </div>
+
+                            <div id="reply-form-{{.ID}}" class="reply-form-box" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #333;">
+                                <form action="/comCreate" method="post" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <input type="hidden" name="post_id" value="{{$global.Post.ID}}">
+                                    <input type="hidden" name="parent_id" value="{{.ID}}">
+                                    
+                                    <textarea name="contenu" rows="2" placeholder="Écrire une réponse à {{.Author}}..." style="width: 100%; padding: 8px; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 4px;" required></textarea>
+                                    <div style="text-align: right;">
+                                        <button type="button" onclick="showReplyForm('reply-form-{{.ID}}')" style="background: #333; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Annuler</button>
+                                        <button type="submit" style="background: #ff4500; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">Envoyer</button>
+                                    </div>
+                                </form>
+                            </div>
+                            {{end}}
+                        </div>
+
+                        {{$currentID := .ID}}
+                        {{range $global.Comments}}
+                            {{if eq .ParentID $currentID}}
+                                <div class="comment-reply" style="margin-left: 40px; margin-bottom: 15px; padding: 12px; background: #161616; border-left: 3px solid #ff4500; border-radius: 0 6px 6px 0; text-align: left;">
+                                    <p><span style="color: #ff4500; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Réponse</span>
+                                       <strong>{{.Author}}</strong> — <span style="color: #666; font-size: 12px;">{{.DateCom}}</span></p>
+                                    <p style="margin: 6px 0; color: #ddd;">{{.Contenu}}</p>
+                                </div>
+                            {{end}}
+                        {{end}}
+
+                    {{end}}
                 {{end}}
             {{else}}
-                <p style="color:#888;">Pas de commentaire pour le moment.</p>
+                <p style="color:#888; text-align: left;">Pas de commentaire pour le moment.</p>
             {{end}}
         </div>
 
         {{if .UserInfos.IsConnected}}
-        <div class="add-comment-box">
-            <h3>Ajouter un commentaire</h3>
+            {{if .IsAuthor}}
+                <div class="add-comment-box" style="background: #121212; border: 1px dashed #333; padding: 20px; text-align: center; border-radius: 4px;">
+                        <p style="color: #888; margin: 0; font-size: 14px;">
+                            💡 Vous ne pouvez pas ajouter de commentaire sur votre propre publication. Utilisez l'espace d'édition du profil pour modifier le contenu initial si nécessaire.
+                        </p>
+                </div>
+            {{else}}
+                <div class="add-comment-box">
+                    <h3>Ajouter un commentaire</h3>
 
-            <form action="/comCreate" method="post">
-                <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                    <form action="/comCreate" method="post">
+                        <input type="hidden" name="post_id" value="{{.Post.ID}}">
 
-                <textarea name="contenu" rows="4" placeholder="Votre commentaire..."></textarea>
+                        <textarea name="contenu" rows="4" placeholder="Votre commentaire..."></textarea>
 
-                <button type="submit" class="btn-black" style="margin-top:15px;">Publier</button>
-            </form>
-        </div>
+                        <button type="submit" class="btn-black" style="margin-top:15px;">Publier</button>
+                    </form>
+                </div>
+            {{end}}
         {{end}}
 
         <a href="/posts" class="btn-back">Revenir aux posts</a>
@@ -58,5 +111,16 @@
     </div>
 
 </main>
+
+<script>
+function showReplyForm(formId) {
+    var form = document.getElementById(formId);
+    if (form.style.display === "none" || form.style.display === "") {
+        form.style.display = "block";
+    } else {
+        form.style.display = "none";
+    }
+}
+</script>
 
 {{ template "footer" . }}
