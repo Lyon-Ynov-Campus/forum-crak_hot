@@ -57,3 +57,6 @@ L'utilisateur peut modifier ou supprimer ses données et ou ses posts et comment
 
 ## Utilisation d'IA respectueuse concernant Marjane :
 - Les lignes faites par IA sont commenter directement dans le code.
+
+## Déploiement lien :
+https://forum-crackhot-gaevdhate6bha8b8.francecentral-01.azurewebsites.net/forum
