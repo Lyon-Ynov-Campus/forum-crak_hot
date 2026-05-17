@@ -123,11 +123,11 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	}
 
 	if sort == "likes_desc" || sort == "likes_asc" {
-		postsAllInfos = trierPostsParLikes(postsAllInfos, sort)
+		postsAllInfos = sortPostsbyLikes(postsAllInfos, sort)
 	} else if sort == "com_desc" || sort == "com_asc" {
-		postsAllInfos = trierPostsParCommentaires(postsAllInfos, sort)
+		postsAllInfos = sortPostsbyComments(postsAllInfos, sort)
 	} else if sort == "date_desc" || sort == "date_asc" {
-		postsAllInfos = trierPostsParDate(postsAllInfos, sort)
+		postsAllInfos = sortPostsbyDate(postsAllInfos, sort)
 	}
 
 	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
@@ -212,11 +212,11 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if sort == "likes_desc" || sort == "likes_asc" {
-		postsInfos = trierPostsParLikes(postsInfos, sort)
+		postsInfos = sortPostsbyLikes(postsInfos, sort)
 	} else if sort == "com_desc" || sort == "com_asc" {
-		postsInfos = trierPostsParCommentaires(postsInfos, sort)
+		postsInfos = sortPostsbyComments(postsInfos, sort)
 	} else if sort == "date_desc" || sort == "date_asc" {
-		postsInfos = trierPostsParDate(postsInfos, sort)
+		postsInfos = sortPostsbyDate(postsInfos, sort)
 	}
 
 	data := struct {
@@ -945,7 +945,7 @@ func seeUser(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "seeUser.html", data)
 }
 
-func trierPostsParLikes(p []PostAllInfos, order string) []PostAllInfos {
+func sortPostsbyLikes(p []PostAllInfos, order string) []PostAllInfos {
 	for i := 0; i < len(p); i++ {
 		for j := i + 1; j < len(p); j++ {
 			if order == "likes_desc" && p[i].LikeCount < p[j].LikeCount || order == "likes_asc" && p[i].LikeCount > p[j].LikeCount {
@@ -956,7 +956,7 @@ func trierPostsParLikes(p []PostAllInfos, order string) []PostAllInfos {
 	return p
 }
 
-func trierPostsParCommentaires(p []PostAllInfos, order string) []PostAllInfos {
+func sortPostsbyComments(p []PostAllInfos, order string) []PostAllInfos {
 	for i := 0; i < len(p); i++ {
 		for j := i + 1; j < len(p); j++ {
 			if order == "com_desc" && p[i].ComCount < p[j].ComCount || order == "com_asc" && p[i].ComCount > p[j].ComCount {
@@ -967,7 +967,7 @@ func trierPostsParCommentaires(p []PostAllInfos, order string) []PostAllInfos {
 	return p
 }
 
-func trierPostsParDate(p []PostAllInfos, order string) []PostAllInfos {
+func sortPostsbyDate(p []PostAllInfos, order string) []PostAllInfos {
 	for i := 0; i < len(p); i++ {
 		for j := i + 1; j < len(p); j++ {
 			if order == "date_desc" && p[i].DatePublication < p[j].DatePublication || order == "date_asc" && p[i].DatePublication > p[j].DatePublication {
