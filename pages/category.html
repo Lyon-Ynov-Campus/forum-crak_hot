@@ -1,0 +1,52 @@
+{{ template "header" . }}
+
+<main class="container">
+    <div class="category-header">
+        <h1 class="category-title">{{.Title}}</h1>
+        {{if .IsConnected}}
+            <a href="/create-post?cat={{.Title}}" class="btn-post">+ Poster</a>
+        {{end}}
+    </div>
+
+    <div class="filter-tabs">
+        <a href="#" class="filter-link">TOP</a>
+        <a href="#" class="filter-link">RECENTS</a>
+    </div>
+
+    <div class="action-bar">
+        <button class="btn-discussion">Discussion Générale</button>
+    </div>
+
+    <div class="forum-table-wrapper">
+        <table class="forum-table">
+            <thead>
+                <tr>
+                    <th>Sujet</th>
+                    <th>Auteur</th>
+                    <th>Réponses</th>
+                    <th>Activité</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="subject-title">{{.Sujet}}</div>
+                    </td>
+                    <td class="text-muted">{{.Pseudo}}</td>
+                    <td class="text-muted">{{.Reponses}}</td>
+                    <td class="text-muted">{{.Activite}}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="subject-title">{{.Sujet}}</div>
+                    </td>
+                    <td class="text-muted">{{.Pseudo}}</td>
+                    <td class="text-muted">{{.Reponses}}</td>
+                    <td class="text-muted">{{.Activite}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+{{ template "footer" . }}
