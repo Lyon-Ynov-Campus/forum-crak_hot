@@ -60,3 +60,4 @@ L'utilisateur peut modifier ou supprimer ses données et ou ses posts et comment
 
 ## Déploiement lien :
 https://forum-crackhot-gaevdhate6bha8b8.francecentral-01.azurewebsites.net/forum
+a savoir le déploimement a été réaliser a partie de la branche **diversFIX** et pas de **main**, ainsi elle n'a pas certaine fonctionnalité a jour ...
