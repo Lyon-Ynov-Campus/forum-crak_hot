@@ -17,40 +17,26 @@ func checkEditedPasswordCharacters(userInfos *UserInfos) {
 	var CPC_hasDigit = regexp.MustCompile(`[0-9]`)
 	var hasSpecial = regexp.MustCompile(`[!"#$%&'()*+,\-./:;<=>?@[\\\]^_{|}~]`)
 
-	if !allowedCharacters.MatchString(userInfos.EditedPassword) ||
+	if len(userInfos.EditedPassword) < 12 ||
+		!allowedCharacters.MatchString(userInfos.EditedPassword) ||
 		!CPC_hasUpper.MatchString(userInfos.EditedPassword) ||
 		!CPC_hasLower.MatchString(userInfos.EditedPassword) ||
 		!CPC_hasDigit.MatchString(userInfos.EditedPassword) ||
 		!hasSpecial.MatchString(userInfos.EditedPassword) {
-		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus. Veuillez réessayer."
+		userInfos.AccountError = "La composition du mot de passe ne respecte pas les critères attendus."
 	}
 }
 
-func updateUserPP(email string, ppURL string) error {
-	db, err := OpenDB()
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
+func updateDBPhoto(username string, ppURL string) error {
+	_, err := db.Exec("UPDATE Users SET photo_profil = ? WHERE username = ?", ppURL, username)
 	return err
 }
 
-func getUserPP(email string) (string, error) {
-	db, err := OpenDB()
-	if err != nil {
-		return "", err
-	}
-
-	var ppURL string
-	err = db.QueryRow("SELECT photo_profil FROM Users WHERE email = ?", email).Scan(&ppURL)
-	if err != nil {
-		return "", err
-	}
-	return ppURL, nil
-}
-
 func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	userInfos.AccountError = ""
+	if userInfos.EditedUsername == "" {
+		return
+	}
+
 	checkUsernameChar := "!\"#$%&'()*+,-./:;<=>?@[\\]^ ` {|}~€£¥©®™§"
 	var usernameCharIsOk = true
 
@@ -62,53 +48,64 @@ func dataEditUsername(w http.ResponseWriter, r *http.Request, userInfos *UserInf
 	}
 
 	if !usernameCharIsOk {
-		userInfos.AccountError = "Le seul caractère spécial autorisé est _ . Veuillez réessayer."
+		userInfos.AccountError = "Le seul caractère spécial autorisé est _ ."
 		return
 	}
 
 	_, err := db.Exec("UPDATE Users SET username=? WHERE email=?", userInfos.EditedUsername, userInfos.Email)
 	if err != nil {
-		userInfos.AccountError = "Ce nom d'utilisateur est déjà utilisé."
+		userInfos.AccountError = "Ce pseudo est déjà utilisé."
 		return
 	}
 	userInfos.Username = userInfos.EditedUsername
-	userInfos.AccountError = "Nom d'utilisateur modifié avec succès."
+	userInfos.AccountError = "Pseudo mis à jour."
 }
 
 func dataEditEmail(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
-	_, err := db.Exec("UPDATE Users SET email=? WHERE email=?", userInfos.EditedEmail, userInfos.Email)
+	if userInfos.EditedEmail == "" {
+		return
+	}
+	var emailRegex = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+
+	if !emailRegex.MatchString(userInfos.EditedEmail) {
+		userInfos.AccountError = "Le format du mail est incorrecte. Veuillez réessayer"
+		return
+	}
+
+	_, err := db.Exec("UPDATE Users SET email=? WHERE username=?", userInfos.EditedEmail, userInfos.Username)
 	if err != nil {
-		userInfos.AccountError = "Cet email est déjà utilisé."
+		userInfos.AccountError = "Cette adresse email est déjà utilisée."
 		return
 	}
 	userInfos.Email = userInfos.EditedEmail
-	userInfos.AccountError = "Email modifié avec succès."
+	userInfos.AccountError = "Email mis à jour."
 }
 
 func dataEditPassword(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	userInfos.AccountError = ""
-	checkEditedPasswordCharacters(userInfos)
-	if userInfos.AccountError != "" {
-		userInfos.EditedPassword = ""
-		userInfos.ConfEditedPassword = ""
-		return
-	}
-
-	if len(userInfos.EditedPassword) < 12 {
-		userInfos.AccountError = "La taille du mot de passe doit être d'au moins 12 caractères."
-		return
-	}
 
 	if userInfos.EditedPassword != userInfos.ConfEditedPassword {
-		userInfos.AccountError = "Les nouveaux mots de passe ne correspondent pas."
+		userInfos.AccountError = "Les mots de passe ne correspondent pas."
 		return
 	}
 
-	hash, _ := bcrypt.GenerateFromPassword([]byte(userInfos.EditedPassword), bcrypt.DefaultCost)
-	_, err := db.Exec("UPDATE Users SET password_hash=? WHERE email=?", string(hash), userInfos.Email)
-	if err != nil {
-		panic(err)
+	checkEditedPasswordCharacters(userInfos)
+	if userInfos.AccountError != "" {
+		return
 	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(userInfos.EditedPassword), bcrypt.DefaultCost)
+	if err != nil {
+		userInfos.AccountError = "Erreur lors du hachage du mot de passe."
+		return
+	}
+
+	_, err = db.Exec("UPDATE Users SET password_hash=? WHERE email=?", string(hash), userInfos.Email)
+	if err != nil {
+		userInfos.AccountError = "Erreur lors de la mise à jour en base de données."
+		return
+	}
+
 	userInfos.EditedPassword = ""
 	userInfos.ConfEditedPassword = ""
 	userInfos.AccountError = "Mot de passe modifié avec succès."
@@ -122,31 +119,23 @@ func dataDeleteAccount(w http.ResponseWriter, r *http.Request, userInfos *UserIn
 		return
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.DeleteAccountPassword)) == nil {
-		// Supprime la photo de profil si elle existe
-		if userInfos.LoadedPP != "" && strings.Contains(userInfos.LoadedPP, "/static/pp/") {
-			parts := strings.Split(userInfos.LoadedPP, "/static/pp/")
-			if len(parts) == 2 {
-				oldFile := "static/pp/" + parts[1]
-				os.Remove(oldFile)
-			}
-		}
-
-		_, err = db.Exec("DELETE FROM Users WHERE email=?", userInfos.Email)
-		if err != nil {
-			panic(err)
-		}
-
-		userInfos.Username, userInfos.Email = "", ""
-		http.SetCookie(w, &http.Cookie{
-			Name:   "session_token",
-			Value:  "",
-			Path:   "/",
-			MaxAge: -1,
-		})
-		userInfos.AccountError = "Compte supprimé avec succès."
-	} else {
+	if bcrypt.CompareHashAndPassword([]byte(comparepassword_hash), []byte(userInfos.DeleteAccountPassword)) != nil {
 		userInfos.AccountError = "Mot de passe incorrect. Impossible de supprimer le compte."
-		userInfos.DeleteAccountPassword = ""
+		return
 	}
+
+	if userInfos.LoadedPP != "" && strings.Contains(userInfos.LoadedPP, "/static/pp/") {
+		if !strings.Contains(userInfos.LoadedPP, "defaultPP.png") {
+			oldFile := strings.TrimPrefix(userInfos.LoadedPP, "/")
+			os.Remove(oldFile)
+		}
+	}
+
+	_, err = db.Exec("DELETE FROM Users WHERE email=?", userInfos.Email)
+	if err != nil {
+		userInfos.AccountError = "Erreur lors de la suppression."
+		return
+	}
+
+	userInfos.AccountError = "Compte supprimé avec succès."
 }

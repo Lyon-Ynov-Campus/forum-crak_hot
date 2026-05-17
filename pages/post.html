@@ -1,0 +1,184 @@
+{{ template "header" . }}
+
+<main class="container">
+
+    <div class="post-wrapper">
+
+        <div id="api-error-container" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 9999; max-width: 350px; animation: slideIn 0.3s ease-out;">
+    <div class="flash-message error" style="display: flex; justify-content: space-between; align-items: center; background-color: #d9534f; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 14px; font-weight: 500; line-height: 1.4;">
+        <span id="api-error-text"></span>
+        <button onclick="document.getElementById('api-error-container').style.display='none'" style="background:none; border:none; color:inherit; cursor:pointer; font-weight:bold; font-size: 20px; margin-left: 15px; line-height: 1; padding: 0; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">&times;</button>
+    </div>
+</div>
+
+<style>
+@keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
+
+
+
+        <h1 class="post-title">{{.Post.Titre}}</h1>
+
+        <p class="post-meta">
+            Par <strong>{{.Author}}</strong> •
+            Catégorie : <span class="subject-category">{{.Post.Categorie}}</span>
+        </p>
+
+        <div class="post-content">
+            <p>{{.Post.Contenu}}</p>
+        </div>
+
+        <div class="like-section" style="margin-bottom: 25px;">
+            {{if .IsAuthor}}
+                <span class="my-post-likes" style="display: inline-block; padding: 10px 15px; background: #1a1a1a; border-radius: 4px; color: #ff4500; font-weight: bold; border: 1px solid #2a2a2a; font-size: 14px;">
+                    🌶️ {{.LikeCount}} Score de piments
+                </span>
+            {{else}}
+                <button onclick="toggleLikeAPI('{{.Post.ID}}')" id="like-btn" class="btn-like {{if .Liked}}liked{{end}}" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <i class="{{if .Liked}}fa-solid{{else}}fa-regular{{end}} fa-heart" id="like-icon" style="color: #ff4500;"></i>
+                    <span id="like-count">{{.LikeCount}}</span>
+                </button>
+            {{end}}
+        </div>
+
+        <div class="comment-section">
+            <h2>Commentaires ({{.ComCount}})</h2>
+
+            {{if $.Comments}}
+                {{$global := .}}
+                
+                {{range $.Comments}}
+                    {{if eq .ParentID 0}}
+                        <div class="comment-block" style="margin-bottom: 20px; padding: 15px; background: #111; border-radius: 6px; border: 1px solid #222; text-align: left;">
+                            <p><strong>{{.Author}}</strong> — <span style="color: #666; font-size: 12px;">{{.DateCom}}</span></p>
+                            <p style="margin: 8px 0; color: #fff;">{{.Contenu}}</p>
+                            
+                            {{if $global.UserInfos.IsConnected}}
+                            <div style="text-align: right;">
+                                <button type="button" onclick="showReplyForm('reply-form-{{.ID}}')" style="background: none; border: none; color: #ff4500; cursor: pointer; font-size: 13px; font-weight: bold;">
+                                    <i class="fa fa-reply"></i> Répondre
+                                </button>
+                            </div>
+
+                            <div id="reply-form-{{.ID}}" class="reply-form-box" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #333;">
+                                <form action="/comCreate" method="post" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <input type="hidden" name="post_id" value="{{$global.Post.ID}}">
+                                    <input type="hidden" name="parent_id" value="{{.ID}}">
+                                    
+                                    <textarea name="contenu" rows="2" placeholder="Écrire une réponse à {{.Author}}..." style="width: 100%; padding: 8px; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 4px;" required></textarea>
+                                    <div style="text-align: right;">
+                                        <button type="button" onclick="showReplyForm('reply-form-{{.ID}}')" style="background: #333; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">Annuler</button>
+                                        <button type="submit" style="background: #ff4500; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px;">Envoyer</button>
+                                    </div>
+                                </form>
+                            </div>
+                            {{end}}
+                        </div>
+
+                        {{$currentID := .ID}}
+                        {{range $global.Comments}}
+                            {{if eq .ParentID $currentID}}
+                                <div class="comment-reply" style="margin-left: 40px; margin-bottom: 15px; padding: 12px; background: #161616; border-left: 3px solid #ff4500; border-radius: 0 6px 6px 0; text-align: left;">
+                                    <p><span style="color: #ff4500; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Réponse</span>
+                                       <strong>{{.Author}}</strong> — <span style="color: #666; font-size: 12px;">{{.DateCom}}</span></p>
+                                    <p style="margin: 6px 0; color: #ddd;">{{.Contenu}}</p>
+                                </div>
+                            {{end}}
+                        {{end}}
+
+                    {{end}}
+                {{end}}
+            {{else}}
+                <p style="color:#888; text-align: left;">Pas de commentaire pour le moment.</p>
+            {{end}}
+        </div>
+
+        {{if .UserInfos.IsConnected}}
+            {{if .IsAuthor}}
+                <div class="add-comment-box" style="background: #121212; border: 1px dashed #333; padding: 20px; text-align: center; border-radius: 4px;">
+                        <p style="color: #888; margin: 0; font-size: 14px;">
+                            💡 Vous ne pouvez pas ajouter de commentaire sur votre propre publication. Utilisez l'espace d'édition du profil pour modifier le contenu initial si nécessaire.
+                        </p>
+                </div>
+            {{else}}
+                <div class="add-comment-box">
+                    <h3>Ajouter un commentaire</h3>
+
+                    <form action="/comCreate" method="post">
+                        <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                        
+                        <input type="hidden" name="parent_id" value="0">
+
+                        <textarea name="contenu" rows="4" placeholder="Votre commentaire..." required></textarea>
+
+                        <button type="submit" class="btn-black" style="margin-top:15px;">Publier</button>
+                    </form>
+                </div>
+            {{end}}
+        {{end}}
+
+        <a href="/posts" class="btn-back">Revenir aux posts</a>
+
+    </div>
+
+</main>
+
+<script>
+function showReplyForm(formId) {
+    var form = document.getElementById(formId);
+    if (form.style.display === "none" || form.style.display === "") {
+        form.style.display = "block";
+    } else {
+        form.style.display = "none";
+    }
+}
+
+function toggleLikeAPI(postId) {
+    const formData = new FormData();
+    formData.append('post_id', postId);
+
+    fetch('/likePost', {
+        method: 'POST',
+        body: formData
+    })
+    .then(async response => {
+        const data = await response.json();
+        
+       if (!response.ok || data.status === "error") {
+    document.getElementById('api-error-text').innerText = data.message || "Une erreur est survenue.";
+    const container = document.getElementById('api-error-container');
+    container.style.display = 'block';
+    
+    setTimeout(() => {
+        container.style.display = 'none';
+    }, 5000);
+    return;
+}
+
+        if (data.status === "success") {
+            document.getElementById('api-error-container').style.display = 'none';
+            document.getElementById('like-count').innerText = data.count;
+            
+            const icon = document.getElementById('like-icon');
+            const btn = document.getElementById('like-btn');
+            if (data.liked) {
+                icon.className = "fa-solid fa-heart";
+                btn.classList.add('liked');
+            } else {
+                icon.className = "fa-regular fa-heart";
+                btn.classList.remove('liked');
+            }
+        }
+    })
+    .catch(err => {
+        console.error("Erreur réseau API:", err);
+        document.getElementById('api-error-text').innerText = "Impossible de contacter le serveur.";
+        document.getElementById('api-error-container').style.display = 'block';
+    });
+}
+</script>
+
+{{ template "footer" . }}

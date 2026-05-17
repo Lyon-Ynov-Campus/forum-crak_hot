@@ -1,0 +1,177 @@
+{{template "header" .}}
+
+<main class="container" style="margin-top: 30px; min-height: 80vh; padding: 0 20px;">
+    
+    <div style="margin-bottom: 25px;">
+        {{if .Query}}
+        <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: bold; letter-spacing: -0.5px;">
+            Résultats pour « {{.Query}} »
+        </h1>
+        {{else}}
+        <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: bold; letter-spacing: -0.5px;">
+            Recherche avancée
+        </h1>
+        {{end}}
+    </div>
+
+    <form method="get" action="/search" id="searchFilterForm">
+        <input type="hidden" name="q" value="{{.Query}}">
+        
+        <div class="fab-filter-bar" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+            
+            <div class="fab-dropdown">
+                <button type="button" class="fab-dropbtn" onclick="toggleDropdown('drop-date')">
+                    Date {{if .FDate}}• 1{{end}} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 6px;"></i>
+                </button>
+                <div id="drop-date" class="fab-dropdown-content">
+                    <label style="color: #888; font-size: 11px; display: block; margin-bottom: 8px;">PUBLIÉ LE</label>
+                    <input type="date" name="fDate" value="{{.FDate}}" onchange="submitFilters()" style="width: 100%; padding: 8px; border-radius: 4px; background: #202020; border: 1px solid #333; color: #fff; font-size: 13px; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <div class="fab-dropdown">
+                <button type="button" class="fab-dropbtn" onclick="toggleDropdown('drop-likes')">
+                    Likes {{if and .MinL (gt .MinL 0)}}• 1{{end}} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 6px;"></i>
+                </button>
+                <div id="drop-likes" class="fab-dropdown-content">
+                    <label style="color: #888; font-size: 11px; display: block; margin-bottom: 8px;">LIKES MINIMUM 🌶️</label>
+                    <input type="number" name="minL" value="{{if .MinL}}{{.MinL}}{{else}}0{{end}}" min="0" placeholder="0" style="width: 100%; padding: 8px; border-radius: 4px; background: #202020; border: 1px solid #333; color: #fff; font-size: 13px; box-sizing: border-box;">
+                    <button type="button" onclick="submitFilters()" style="width:100%; margin-top:10px; padding:6px; background:#ff4500; border:none; color:#fff; border-radius:4px; font-weight:bold; font-size:11px; cursor:pointer;">OK</button>
+                </div>
+            </div>
+
+            <div class="fab-dropdown">
+                <button type="button" class="fab-dropbtn" onclick="toggleDropdown('drop-coms')">
+                    Discussions {{if and .MinC (gt .MinC 0)}}• 1{{end}} <i class="fas fa-chevron-down" style="font-size: 10px; margin-left: 6px;"></i>
+                </button>
+                <div id="drop-coms" class="fab-dropdown-content">
+                    <label style="color: #888; font-size: 11px; display: block; margin-bottom: 8px;">RÉPONSES MINIMUM 💬</label>
+                    <input type="number" name="minC" value="{{if .MinC}}{{.MinC}}{{else}}0{{end}}" min="0" placeholder="0" style="width: 100%; padding: 8px; border-radius: 4px; background: #202020; border: 1px solid #333; color: #fff; font-size: 13px; box-sizing: border-box;">
+                    <button type="button" onclick="submitFilters()" style="width:100%; margin-top:10px; padding:6px; background:#ff4500; border:none; color:#fff; border-radius:4px; font-weight:bold; font-size:11px; cursor:pointer;">OK</button>
+                </div>
+            </div>
+
+            <div style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+                <span style="color: #8f8f8f; font-size: 13px;">Trier par :</span>
+                <select name="sort" onchange="submitFilters()" style="padding: 8px 14px; border-radius: 4px; background: #121212; border: 1px solid #202020; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer;">
+                    <option value="date_desc" {{if eq .Sort "date_desc"}}selected{{end}}>Pertinence / Récents</option>
+                    <option value="date_asc" {{if eq .Sort "date_asc"}}selected{{end}}>Anciens</option>
+                    <option value="likes_desc" {{if eq .Sort "likes_desc"}}selected{{end}}>Plus aimés</option>
+                    <option value="com_desc" {{if eq .Sort "com_desc"}}selected{{end}}>Plus commentés</option>
+                </select>
+            </div>
+        </div>
+    </form>
+
+    {{if or .FDate (and .MinL (gt .MinL 0)) (and .MinC (gt .MinC 0))}}
+    <div class="fab-tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 25px;">
+        {{if .FDate}}
+        <span class="fab-tag">Date: {{.FDate}} <a href="/search?q={{.Query}}&minL={{.MinL}}&minC={{.MinC}}&sort={{.Sort}}">×</a></span>
+        {{end}}
+        
+        {{if and .MinL (gt .MinL 0)}}
+        <span class="fab-tag">🌶️ ≥ {{.MinL}} <a href="/search?q={{.Query}}&fDate={{.FDate}}&minC={{.MinC}}&sort={{.Sort}}">×</a></span>
+        {{end}}
+        
+        {{if and .MinC (gt .MinC 0)}}
+        <span class="fab-tag">💬 ≥ {{.MinC}} <a href="/search?q={{.Query}}&fDate={{.FDate}}&minL={{.MinL}}&sort={{.Sort}}">×</a></span>
+        {{end}}
+
+        <a href="/search?q={{.Query}}&sort={{.Sort}}" class="fab-btn-reset">Réinitialiser</a>
+    </div>
+    {{end}}
+
+    <div class="forum-table-wrapper" style="background: #121212; border-radius: 8px; border: 1px solid #202020; overflow: hidden; margin-top: 15px;">
+        <table class="forum-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid #202020; background: #161616;">
+                    <th style="padding: 16px; text-align: left; color: #8f8f8f; font-size: 12px; font-weight: bold; letter-spacing: 0.5px;">SUJET</th>
+                    <th style="padding: 16px; text-align: left; color: #8f8f8f; font-size: 12px; font-weight: bold; letter-spacing: 0.5px;">AUTEUR</th>
+                    <th style="padding: 16px; text-align: left; color: #8f8f8f; font-size: 12px; font-weight: bold; letter-spacing: 0.5px;">CATÉGORIE</th>
+                    <th style="padding: 16px; text-align: left; color: #8f8f8f; font-size: 12px; font-weight: bold; letter-spacing: 0.5px;">RÉPONSES</th>
+                    <th style="padding: 16px; text-align: left; color: #8f8f8f; font-size: 12px; font-weight: bold; letter-spacing: 0.5px;">DATE</th>
+                    <th style="padding: 16px; text-align: left; color: #8f8f8f; font-size: 12px; font-weight: bold; letter-spacing: 0.5px;">LIKES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Posts}}
+                <tr class="forum-row" style="border-bottom: 1px solid #1c1c1c; transition: background 0.2s;">
+                    <td style="padding: 16px;">
+                        <a href="/post?id={{.ID}}" class="subject-title" style="color: #fff; text-decoration: none; font-weight: 500; font-size: 14px;">{{.Titre}}</a>
+                    </td>
+                    <td style="padding: 16px; color: #828282; font-size: 14px;">{{.Author}}</td>
+                    <td style="padding: 16px; color: #828282; font-size: 14px;">
+                        <span style="background: #202020; padding: 4px 10px; border-radius: 4px; color: #ccc; font-size: 12px;">{{.Categorie}}</span>
+                    </td>
+                    <td style="padding: 16px; color: #828282; font-size: 14px;">{{.ComCount}}</td>
+                    <td style="padding: 16px; color: #828282; font-size: 14px;">{{.DatePublication}}</td>
+                    <td style="padding: 16px; color: #828282; font-size: 14px;">🌶️ {{.LikeCount}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 50px; color: #666; font-size: 14px;">
+                        Aucun piment trouvé pour cette recherche ou ces filtres.
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+window.onclick = function(event) {
+    if (!event.target.matches('.fab-dropbtn') && !event.target.closest('.fab-dropdown-content')) {
+        var dropdowns = document.getElementsByClassName("fab-dropdown-content");
+        for (var i = 0; i < dropdowns.length; i++) {
+            dropdowns[i].classList.remove('show');
+        }
+    }
+}
+
+function toggleDropdown(id) {
+    var element = document.getElementById(id);
+    var wasShown = element.classList.contains('show');
+    var dropdowns = document.getElementsByClassName("fab-dropdown-content");
+    for (var i = 0; i < dropdowns.length; i++) {
+        dropdowns[i].classList.remove('show');
+    }
+    if (!wasShown) {
+        element.classList.add('show');
+    }
+}
+
+function submitFilters() {
+    document.getElementById('searchFilterForm').submit();
+}
+</script>
+
+<style>
+    .fab-dropbtn {
+        background: #18181c; color: #fff; border: 1px solid #2a2a30;
+        padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 4px;
+        cursor: pointer; display: flex; align-items: center; transition: all 0.2s;
+    }
+    .fab-dropbtn:hover { border-color: #444450; background: #1f1f24; }
+    .fab-dropdown { position: relative; display: inline-block; }
+    .fab-dropdown-content {
+        display: none; position: absolute; background-color: #16161a;
+        min-width: 200px; border: 1px solid #2a2a30; border-radius: 4px;
+        padding: 15px; z-index: 100; margin-top: 6px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+    }
+    .fab-dropdown-content.show { display: block; }
+    .fab-tag {
+        background: #202024; color: #fff; padding: 6px 12px; border-radius: 20px;
+        font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #30303a;
+    }
+    .fab-tag a { color: #888; text-decoration: none; display: flex; align-items: center; }
+    .fab-tag a:hover { color: #ff4500; }
+    .fab-btn-reset {
+        background: #202024; color: #fff; border: 1px solid #30303a; padding: 6px 14px;
+        font-size: 12px; font-weight: bold; border-radius: 20px; text-decoration: none; transition: background 0.2s;
+    }
+    .fab-btn-reset:hover { background: #ff4500; border-color: #ff4500; }
+    .forum-row:hover { background-color: #16161a !important; }
+</style>
+
+{{template "footer" .}}
