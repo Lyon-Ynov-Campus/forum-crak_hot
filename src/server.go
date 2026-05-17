@@ -34,6 +34,7 @@ func StartServer() {
 	http.HandleFunc("/api/like", API_LikeHandler)
 	http.HandleFunc("/api/posts", API_GetPostsHandler)
 	http.HandleFunc("/api/create-post", API_CreatePostHandler)
+	http.HandleFunc("/api/search-users", API_SearchUsersHandler)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		homeHandler(w, r, &userInfos)

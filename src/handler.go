@@ -1,6 +1,7 @@
 package forum
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -81,7 +82,6 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
 
 	var posts []Post
-
 	if query == "" {
 		posts, _ = GetAllPosts()
 	} else {
@@ -123,11 +123,11 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	}
 
 	if sort == "likes_desc" || sort == "likes_asc" {
-		postsAllInfos = trierPostsParLikes(postsAllInfos, sort)
+		postsAllInfos = sortPostsbyLikes(postsAllInfos, sort)
 	} else if sort == "com_desc" || sort == "com_asc" {
-		postsAllInfos = trierPostsParCommentaires(postsAllInfos, sort)
+		postsAllInfos = sortPostsbyComments(postsAllInfos, sort)
 	} else if sort == "date_desc" || sort == "date_asc" {
-		postsAllInfos = trierPostsParDate(postsAllInfos, sort)
+		postsAllInfos = sortPostsbyDate(postsAllInfos, sort)
 	}
 
 	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
@@ -212,11 +212,11 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if sort == "likes_desc" || sort == "likes_asc" {
-		postsInfos = trierPostsParLikes(postsInfos, sort)
+		postsInfos = sortPostsbyLikes(postsInfos, sort)
 	} else if sort == "com_desc" || sort == "com_asc" {
-		postsInfos = trierPostsParCommentaires(postsInfos, sort)
+		postsInfos = sortPostsbyComments(postsInfos, sort)
 	} else if sort == "date_desc" || sort == "date_asc" {
-		postsInfos = trierPostsParDate(postsInfos, sort)
+		postsInfos = sortPostsbyDate(postsInfos, sort)
 	}
 
 	data := struct {
@@ -306,7 +306,6 @@ func HeartHandler(w http.ResponseWriter, r *http.Request) {
     LIMIT 1`
 
 	err := db.QueryRow(query).Scan(&hp.ID, &hp.Titre, &hp.Contenu, &hp.Date, &hp.Auteur, &hp.LikeCount)
-
 	if err != nil {
 		hp = HeartPost{Titre: "Pas encore de favori", Contenu: "Faites vivre le forum pour voir apparaître un coup de cœur !"}
 	}
@@ -321,10 +320,12 @@ func HeartHandler(w http.ResponseWriter, r *http.Request) {
 		*UserInfos
 		Page  string
 		Query string
+		Post	HeartPost
 	}{
 		UserInfos: user,
 		Page:      "heart",
 		Query:     "",
+		Post:		hp,
 	}
 
 	tmpl.ExecuteTemplate(w, "heart.html", data)
@@ -493,6 +494,12 @@ func postCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func postUpdate(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
@@ -515,6 +522,12 @@ func postUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func postDelete(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	postID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	if postID == 0 {
 		postID, _ = strconv.Atoi(r.FormValue("id"))
@@ -767,30 +780,56 @@ func myPosts(w http.ResponseWriter, r *http.Request) {
 /* ===== Partie com reper ===== */
 
 func comCreate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json") //config réponse format Json (api)
+	
+	userID := GetUserID(r)
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		w.WriteHeader(http.StatusUnauthorized) //pour l'erreur 401
+		w.Write([]byte(`{error": "Vous devez etre connecter pour commenter ou repondre}`))
+		return
+	}
+
 	if r.Method == http.MethodPost {
 		contenu := r.FormValue("contenu")
 		postID, _ := strconv.Atoi(r.FormValue("post_id"))
 		parentID, _ := strconv.Atoi(r.FormValue("parent_id"))
 		date := time.Now().Format("2006-01-02")
 
-		userID := GetUserID(r)
-
 		post, err := GetPostByID(postID)
 		if err == nil && post.UserID == userID && parentID == 0 {
-			http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+			w.WriteHeader(http.StatusBadRequest) // Erreur 400
+			w.Write([]byte(`{"error": "Vous ne pouvez pas ajouter de commentaire sur votre propre publication."}`))
+			// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
 			return
 		}
 
 		CreateCom(contenu, date, userID, postID, parentID)
+		err = CreateCom(contenu, date, userID, postID, parentID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error": "Erreur lors de l'enregistrement du commentaire."}`))
+			return
+		}
 
-		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status": "success", "message": "Commentaire ajouté avec succès !"}`))
+		return
+		// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/posts", http.StatusSeeOther) //secu si qlq accede en get car get pas id pas comme post donc au cas ou
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	// http.Redirect(w, r, "/posts", http.StatusSeeOther) //secu si qlq accede en get car get pas id pas comme post donc au cas ou
 }
 
 func comUpdate(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
 		return
@@ -810,6 +849,12 @@ func comUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func comDelete(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	
 	comID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	com, err := GetComByID(comID)
 	if err != nil || com.UserID != GetUserID(r) {
@@ -847,37 +892,61 @@ func seeMyComs(w http.ResponseWriter, r *http.Request) { //page profil user
 /* ===== Partie likes ===== */
 
 func likePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	userID := GetUserID(r)
 	postID, _ := strconv.Atoi(r.FormValue("post_id"))
 
-	if !userInfos.IsConnected {
-		SetFlash(w, "error", "Vous devez être connecté pour effectuer cette action.")
-		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		// SetFlash(w, "error", "Vous devez être connecté pour effectuer cette action.")
+		// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		w.WriteHeader(http.StatusUnauthorized) // Erreur 401
+		w.Write([]byte(`{"status": "error", "message": "Vous devez être connecté pour effectuer cette action."}`))
 		return
 	}
 
+	post, err := GetPostByID(postID)
+	if err == nil && post.UserID == userID {
+		w.WriteHeader(http.StatusBadRequest) // Erreur 400
+		w.Write([]byte(`{"status": "error", "message": "Vous ne pouvez pas aimer votre propre publication."}`))
+		return
+	}
+
+	liked := false
 	if HasLiked(userID, postID) {
 		UnlikePost(userID, postID)
 	} else {
 		LikePost(userID, postID)
+		liked = true
 	}
 
-	http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+	newCount, _ := CountLikes(postID)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status": "success", "liked": %t, "count": %d}`, liked, newCount)
+	// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
 }
 
 func unLikePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	userID := GetUserID(r)
 	postID, _ := strconv.Atoi(r.FormValue("post_id"))
 
-	if !userInfos.IsConnected {
-		SetFlash(w, "error", "Vous devez être connecté pour effectuer cette action.")
-		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		// SetFlash(w, "error", "Vous devez être connecté pour effectuer cette action.")
+		// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"status": "error", "message": "Vous devez être connecté pour effectuer cette action."}`))
 		return
 	}
 
 	UnlikePost(userID, postID)
+	newCount, _ := CountLikes(postID)
 
-	http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status": "success", "liked": false, "count": %d}`, newCount)
+	// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
 }
 
 /* ===== Partie recherche réseau ===== */
@@ -945,7 +1014,7 @@ func seeUser(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "seeUser.html", data)
 }
 
-func trierPostsParLikes(p []PostAllInfos, order string) []PostAllInfos {
+func sortPostsbyLikes(p []PostAllInfos, order string) []PostAllInfos {
 	for i := 0; i < len(p); i++ {
 		for j := i + 1; j < len(p); j++ {
 			if order == "likes_desc" && p[i].LikeCount < p[j].LikeCount || order == "likes_asc" && p[i].LikeCount > p[j].LikeCount {
@@ -956,7 +1025,7 @@ func trierPostsParLikes(p []PostAllInfos, order string) []PostAllInfos {
 	return p
 }
 
-func trierPostsParCommentaires(p []PostAllInfos, order string) []PostAllInfos {
+func sortPostsbyComments(p []PostAllInfos, order string) []PostAllInfos {
 	for i := 0; i < len(p); i++ {
 		for j := i + 1; j < len(p); j++ {
 			if order == "com_desc" && p[i].ComCount < p[j].ComCount || order == "com_asc" && p[i].ComCount > p[j].ComCount {
@@ -967,7 +1036,7 @@ func trierPostsParCommentaires(p []PostAllInfos, order string) []PostAllInfos {
 	return p
 }
 
-func trierPostsParDate(p []PostAllInfos, order string) []PostAllInfos {
+func sortPostsbyDate(p []PostAllInfos, order string) []PostAllInfos {
 	for i := 0; i < len(p); i++ {
 		for j := i + 1; j < len(p); j++ {
 			if order == "date_desc" && p[i].DatePublication < p[j].DatePublication || order == "date_asc" && p[i].DatePublication > p[j].DatePublication {
@@ -976,4 +1045,23 @@ func trierPostsParDate(p []PostAllInfos, order string) []PostAllInfos {
 		}
 	}
 	return p
+}
+
+func API_SearchUsersHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	
+	query := strings.TrimSpace(r.URL.Query().Get("username"))
+	if query == "" {
+		w.Write([]byte(`[]`))
+		return
+	}
+	
+	users, err := SearchUsersByName(query)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error": "Erreur lors de la recherche en base de données"}`))
+		return
+	}
+
+	json.NewEncoder(w).Encode(users) 
 }
