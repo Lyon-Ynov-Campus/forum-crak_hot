@@ -4,10 +4,26 @@
 
     <div class="post-wrapper">
 
+        <div id="api-error-container" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 9999; max-width: 350px; animation: slideIn 0.3s ease-out;">
+    <div class="flash-message error" style="display: flex; justify-content: space-between; align-items: center; background-color: #d9534f; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 14px; font-weight: 500; line-height: 1.4;">
+        <span id="api-error-text"></span>
+        <button onclick="document.getElementById('api-error-container').style.display='none'" style="background:none; border:none; color:inherit; cursor:pointer; font-weight:bold; font-size: 20px; margin-left: 15px; line-height: 1; padding: 0; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">&times;</button>
+    </div>
+</div>
+
+<style>
+@keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
+
+
+
         <h1 class="post-title">{{.Post.Titre}}</h1>
 
         <p class="post-meta">
-            Par <strong>{{.Author}}</strong> • 
+            Par <strong>{{.Author}}</strong> •
             Catégorie : <span class="subject-category">{{.Post.Categorie}}</span>
         </p>
 
@@ -21,14 +37,10 @@
                     🌶️ {{.LikeCount}} Score de piments
                 </span>
             {{else}}
-                <form action="/likePost" method="post">
-                    <input type="hidden" name="post_id" value="{{.Post.ID}}">
-                    {{if .Liked}}
-                        <button type="submit" class="btn-like">Retirer le like</button>
-                    {{else}}
-                        <button type="submit" class="btn-like">Liker ({{.LikeCount}})</button>
-                    {{end}}
-                </form>
+                <button onclick="toggleLikeAPI('{{.Post.ID}}')" id="like-btn" class="btn-like {{if .Liked}}liked{{end}}" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <i class="{{if .Liked}}fa-solid{{else}}fa-regular{{end}} fa-heart" id="like-icon" style="color: #ff4500;"></i>
+                    <span id="like-count">{{.LikeCount}}</span>
+                </button>
             {{end}}
         </div>
 
@@ -36,7 +48,7 @@
             <h2>Commentaires ({{.ComCount}})</h2>
 
             {{if $.Comments}}
-                {{$global := .}} 
+                {{$global := .}}
                 
                 {{range $.Comments}}
                     {{if eq .ParentID 0}}
@@ -97,8 +109,10 @@
 
                     <form action="/comCreate" method="post">
                         <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                        
+                        <input type="hidden" name="parent_id" value="0">
 
-                        <textarea name="contenu" rows="4" placeholder="Votre commentaire..."></textarea>
+                        <textarea name="contenu" rows="4" placeholder="Votre commentaire..." required></textarea>
 
                         <button type="submit" class="btn-black" style="margin-top:15px;">Publier</button>
                     </form>
@@ -120,6 +134,50 @@ function showReplyForm(formId) {
     } else {
         form.style.display = "none";
     }
+}
+
+function toggleLikeAPI(postId) {
+    const formData = new FormData();
+    formData.append('post_id', postId);
+
+    fetch('/likePost', {
+        method: 'POST',
+        body: formData
+    })
+    .then(async response => {
+        const data = await response.json();
+        
+       if (!response.ok || data.status === "error") {
+    document.getElementById('api-error-text').innerText = data.message || "Une erreur est survenue.";
+    const container = document.getElementById('api-error-container');
+    container.style.display = 'block';
+    
+    setTimeout(() => {
+        container.style.display = 'none';
+    }, 5000);
+    return;
+}
+
+        if (data.status === "success") {
+            document.getElementById('api-error-container').style.display = 'none';
+            document.getElementById('like-count').innerText = data.count;
+            
+            const icon = document.getElementById('like-icon');
+            const btn = document.getElementById('like-btn');
+            if (data.liked) {
+                icon.className = "fa-solid fa-heart";
+                btn.classList.add('liked');
+            } else {
+                icon.className = "fa-regular fa-heart";
+                btn.classList.remove('liked');
+            }
+        }
+    })
+    .catch(err => {
+        console.error("Erreur réseau API:", err);
+        document.getElementById('api-error-text').innerText = "Impossible de contacter le serveur.";
+        document.getElementById('api-error-container').style.display = 'block';
+    });
 }
 </script>
 
