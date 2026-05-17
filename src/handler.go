@@ -62,6 +62,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
+	search := r.URL.Query().Get("q")  //ajout pr tri
+	sort := r.URL.Query().Get("sort") //ajout pr tri
 	user := GetUserFromSession(r)
 	LoadFlash(w, r, user)
 
@@ -81,6 +83,13 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	} else {
 		posts, _ = SearchPostsByTitle(query)
 	}
+
+	for i := range posts { //rempli val avant le tri car sinon func getallposts et SearchPostsByTitle ne remplisse pas count like ou com
+		posts[i].CountCom, _ = CountCom(posts[i].ID)
+		posts[i].CountLikes, _ = CountLikes(posts[i].ID)
+	}
+
+	posts = ApplyTri(posts, sort) //ajout pr tri
 
 	var postsAllInfos []PostAllInfos
 
@@ -103,12 +112,16 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
 
 	data := struct {
-		Posts []PostAllInfos
+		Posts  []PostAllInfos
+		Search string
+		Sort   string
 		*UserInfos
 		Page  string
 		Query string
 	}{
 		Posts:     postsAllInfos,
+		Search:    search,
+		Sort:      sort,
 		UserInfos: user,
 		Page:      "home",
 		Query:     query,
