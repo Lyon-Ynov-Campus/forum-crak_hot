@@ -1,25 +1,112 @@
 {{template "header" .}}
+
+
+
 <main class="container">
-    <h3 style="color: #666;">Catégories</h3>
-    
+    <h3 style="color: #666; margin-top: 20px;">Explorer par Catégories</h3>
     <div class="category-grid">
-        <a href="/categories/la-braise" class="category-card">
-            <div class="card-icon"></div>
+        <a href="/categories/Recette" class="category-card">
+            <div class="card-icon">🍳</div>
             <div class="card-content">
-                <h2 style="margin: 0; font-size: 18px;">La Braise</h2>
-                <p style="color: #999; font-size: 13px;">Discussions générales et blabla culinaire</p>
-                <span style="color: #666; font-size: 11px;">• Présentations • News • Divers</span>
+                <h2 style="margin: 0; font-size: 18px;">Recettes</h2>
+                <p style="color: #999; font-size: 13px;">Partage tes meilleurs plats épicés</p>
             </div>
         </a>
-
-        <a href="/categories/l-arsenal" class="category-card">
-            <div class="card-icon"></div>
+        
+        <a href="/categories/Adresse" class="category-card">
+            <div class="card-icon">📍</div>
             <div class="card-content">
-                <h2 style="margin: 0; font-size: 18px;">L'Arsenal</h2>
-                <p style="color: #999; font-size: 13px;">Discussions générales et blabla culinaire</p>
-                <span style="color: #666; font-size: 11px;">• Présentations • News • Divers</span>
+                <h2 style="margin: 0; font-size: 18px;">Bonnes Adresses</h2>
+                <p style="color: #999; font-size: 13px;">Où manger pimenté en ville ?</p>
+            </div>
+        </a>
+        
+        <a href="/categories/Conseils" class="category-card">
+            <div class="card-icon">🔥</div>
+            <div class="card-content">
+                <h2 style="margin: 0; font-size: 18px;">Conseils</h2>
+                <p style="color: #999; font-size: 13px;">Astuces pour les amoureux de la braise</p>
             </div>
         </a>
     </div>
+    
+    <div class="category-header" style="margin-top: 40px; display: flex; justify-content: space-between; align-items: center;">
+        <h1 class="category-title">Discussions Récentes</h1>
+        {{if .UserInfos.IsConnected}}
+        <a href="/postCreate" class="btn-post">+ Poster</a>
+        {{end}}
+    </div>
+    
+    <div class="filter-tabs">
+        <a class="filter-link active-filter">TOP</a>
+        <a class="filter-link">RECENTS</a>
+    </div>
+    
+    {{if .Query}}
+    <p style="color:#aaa; margin-bottom:10px;">
+    Résultats pour : "<strong>{{.Query}}</strong>"
+</p>
+{{end}}
+
+
+<div class="forum-table-wrapper">
+    <table class="forum-table">
+            <thead>
+                <tr>
+                    <th>SUJET</th>
+                    <th>AUTEUR</th>
+                    <th>CATÉGORIE</th>
+                    <th>COMMENTAIRES</th>
+                    <th>DATE</th>
+                    <th>LIKES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Posts}}
+                <tr>
+                    <td>
+                        <a href="/post?id={{.ID}}" class="subject-title">{{.Titre}}</a>
+                    </td>
+                    <td class="text-muted">{{.Author}}</td>
+                    <td class="text-muted">
+                        <span class="subject-category">{{.Categorie}}</span>
+                    </td>
+                    <td class="text-muted">{{.ComCount}}</td>
+                    <td class="text-muted">{{.DatePublication}}</td>
+                    <td class="text-muted">🌶️ {{.LikeCount}}</td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 30px; color: #666;">
+                        Aucun piment à l'horizon... Soyez le premier à poster !
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    <div class="sort-bar">
+        <form method="get" class="sort-form" style="display: flex; gap: 10px; align-items: center;">
+    
+            <!-- Menu déroulant -->
+            <select name="sort">
+                <option value="">-- Trier par --</option>
+                <option value="date_desc">Date (récent -> ancien)</option>
+                <option value="date_asc">Date (ancien -> récent)</option>
+                <option value="likes_desc">Likes (plus -> moins)</option>
+                <option value="likes_asc">Likes (moins -> plus)</option>
+                <option value="com_desc">Commentaires (plus -> moins)</option>
+                <option value="com_asc">Commentaires (moins -> plus)</option>
+            </select>
+    
+            <input type="hidden" name="q" value="{{.Query}}">
+    
+            <button type="submit" class="btn-black">Trier</button>
+    
+            <a href="/posts" class="btn-black">Réinitialiser</a>
+    
+        </form>
+    </div>
 </main>
+
 {{template "footer" .}}
