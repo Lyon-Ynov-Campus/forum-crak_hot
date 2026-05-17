@@ -80,7 +80,7 @@ func SendPasswordResetEmail(email string, token string) error {
 	fmt.Printf("Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe:\n%s\n\n", resetLink)
 
 	/*
-		//Pour le prod
+		//Pour la prod
 		from := "noreply@forum.com"
 		password := "your_email_password"
 		to := []string{email}

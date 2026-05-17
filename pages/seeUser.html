@@ -1,0 +1,58 @@
+{{template "header" .}}
+
+<main class="container">
+    <div class="profile-header" style="text-align: center; padding: 40px 20px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333; margin-bottom: 30px;">
+        <img src="{{if .Profile.Photo_profil}}{{.Profile.Photo_profil}}{{else if .Profile.Photo}}{{.Profile.Photo}}{{else}}/static/pp/defaultPP.png{{end}}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #ff4500; margin-bottom: 15px;">
+        
+        <h1 style="color: white; margin: 0 0 10px 0;">
+            Profil de {{if .Profile.Username}}{{.Profile.Username}}{{else if .Profile.Pseudo}}{{.Profile.Pseudo}}{{else}}Passionné{{end}}
+        </h1>
+        <p style="color: #888; margin: 0;">Membre de la communauté Crak'Hot 🌶️</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start;">
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div style="background: #111; border: 1px solid #222; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #ff4500; margin-top: 0; border-bottom: 1px solid #222; padding-bottom: 10px;">Commentaires récents</h3>
+                {{if .Comments}}
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 15px;">
+                        {{range .Comments}}
+                            <li style="background: #161616; padding: 12px; border-radius: 6px; border-left: 3px solid #ff4500;">
+                                <p style="margin: 0; color: #ddd; font-size: 14px;">"{{.Contenu}}"</p>
+                                <span style="color: #666; font-size: 11px; display: block; margin-top: 5px;">Posté le {{.DateCom}}</span>
+                            </li>
+                        {{end}}
+                    </ul>
+                {{else}}
+                    <p style="color: #555; font-size: 14px; margin: 0;">Aucun commentaire écrit pour le moment.</p>
+                {{end}}
+            </div>
+        </div>
+
+        <div style="background: #111; border: 1px solid #222; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #ff4500; margin-top: 0; border-bottom: 1px solid #222; padding-bottom: 10px;">Publications</h3>
+            {{if .Posts}}
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    {{range .Posts}}
+                        <div style="background: #161616; padding: 20px; border-radius: 6px; border: 1px solid #222; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="margin: 0 0 5px 0;"><a href="/post?id={{.ID}}" style="color: white; text-decoration: none; transition: color 0.2s;">{{.Titre}}</a></h4>
+                                <span style="color: #666; font-size: 12px;">Catégorie : {{.Categorie}} — Le {{.DatePublication}}</span>
+                            </div>
+                        </div>
+                    {{end}}
+                </div>
+            {{else}}
+                <p style="color: #555; font-size: 14px; margin: 0;">Ce membre n'a pas encore créé de discussion.</p>
+            {{end}}
+        </div>
+
+    </div>
+
+    <div style="margin-top: 40px; text-align: center;">
+        <a href="/reseau" style="color: #666; text-decoration: none; font-weight: bold;">&larr; Retourner à l'Espace Réseau</a>
+    </div>
+</main>
+
+{{template "footer" .}}

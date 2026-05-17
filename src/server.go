@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-const serverAddr = "127.0.0.1:8080"
+const serverAddr = ":80"
 
 type UserInfos struct {
 	Username              string
@@ -21,6 +21,8 @@ type UserInfos struct {
 	LoadedPP              string
 	EditedPP              string
 	AccountError          string
+	FlashMessage          string
+	FlashType             string
 	Status                string
 	DBid                  string
 	IsConnected           bool
@@ -29,7 +31,11 @@ type UserInfos struct {
 var userInfos UserInfos
 
 func StartServer() {
-	//Handlers corps principal
+	http.HandleFunc("/api/like", API_LikeHandler)
+	http.HandleFunc("/api/posts", API_GetPostsHandler)
+	http.HandleFunc("/api/create-post", API_CreatePostHandler)
+	http.HandleFunc("/api/search-users", API_SearchUsersHandler)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		homeHandler(w, r, &userInfos)
 	})
@@ -52,14 +58,12 @@ func StartServer() {
 	http.HandleFunc("/checklogin", func(w http.ResponseWriter, r *http.Request) {
 		checkloginHandler(w, r, &userInfos)
 	})
-
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		registerHandler(w, r, &userInfos)
 	})
 	http.HandleFunc("/checkregister", func(w http.ResponseWriter, r *http.Request) {
 		checkregisterHandler(w, r, &userInfos)
 	})
-
 	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		logoutHandler(w, r, &userInfos)
 	})
@@ -88,6 +92,46 @@ func StartServer() {
 	http.HandleFunc("/deletePP", func(w http.ResponseWriter, r *http.Request) {
 		deletePPHandler(w, r, &userInfos)
 	})
+
+	// route gestion action user
+	//post
+	http.HandleFunc("/postCreate", postCreate)
+	/*http.HandleFunc("/postCreate", func(w http.ResponseWriter, r *http.Request) {
+	    // On s'assure que la PP globale est à jour
+	    if userInfos.Email != "" {
+	        userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+	    }
+	    postCreate(w, r)
+	})*/
+	http.HandleFunc("/postUpdate", postUpdate)
+	http.HandleFunc("/postDelete", postDelete)
+	http.HandleFunc("/post", seeOnePost) //post indeivudel du membre
+	/*http.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+	    if userInfos.Email != "" {
+	        userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+	    }
+	    seeOnePost(w, r)
+	})*/
+	http.HandleFunc("/posts", seeAllPosts) //tout les post afficher
+	/*http.HandleFunc("/posts", func(w http.ResponseWriter, r *http.Request) {
+	    if userInfos.Email != "" {
+	        userInfos.LoadedPP, _ = getUserPP(userInfos.Email)
+	    }
+	    seeAllPosts(w, r)
+	})*/
+	http.HandleFunc("/myPosts", myPosts) //tout MES psot afficher
+	// com
+	http.HandleFunc("/comCreate", comCreate)
+	http.HandleFunc("/comUpdate", comUpdate)
+	http.HandleFunc("/comDelete", comDelete)
+	http.HandleFunc("/myComs", seeMyComs)
+
+	//like
+	http.HandleFunc("/likePost", likePost)
+	http.HandleFunc("/unLikePost", unLikePost)
+	//reseua
+	http.HandleFunc("/seeUser", seeUser)         //ds recherche reseau quand on clique btn voir proifl
+	http.HandleFunc("/seeAllUsers", seeAllUsers) //ds recherche liste des membres de la recherche
 
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))

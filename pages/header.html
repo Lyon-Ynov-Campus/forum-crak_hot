@@ -1,50 +1,58 @@
-{{ define "header"}}
+{{ define "header" }}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <title>Crak'Hot Forum</title>
+    <title>Crak'Hot - Le Forum qui pique</title>
 </head>
 <body>
-    <div class="logo-hero-section">
-        <img src="/assets/logo.png" alt="Crak'Hot Logo" class="main-logo">
-    </div>
+    <header class="logo-hero-section">
+        <a href="/">
+            <img src="/assets/logo.png" alt="Crak'Hot Logo" class="main-logo">
+        </a>
+    </header>
 
     <nav class="navbar">
         <div class="nav-links">
             <a href="{{if .IsConnected}}/forum{{else}}/{{end}}" class="nav-link {{if eq .Page "home"}}active{{end}}">ACCUEIL</a>
             
-            <a href="/reseau" class="nav-link {{if eq .Page "reseau"}}active{{end}}">RESEAU</a>
+            <a href="/reseau" class="nav-link {{if eq .Page "reseau"}}active{{end}}">RÉSEAU</a>
             
             <a href="/coup-de-coeur" class="nav-link {{if eq .Page "heart"}}active{{end}}">COUP DE COEUR</a>
         </div>
 
-        
         <div class="search-bar-container">
-            <input type="text" placeholder="Rechercher un sujet ou un piment..." class="search-input">
-            <i class="fa fa-search search-icon"></i>
+            <form action="/forum" method="GET" style="display: flex; width: 100%; align-items: center;">
+                <input type="text" name="q" placeholder="Rechercher un sujet ou un piment..." class="search-input" value="{{if .Query}}{{.Query}}{{end}}" onclick="this.select();">
+                <button type="submit" style="background: none; border: none; color: #666; cursor: pointer; margin-left: -30px;">
+                    <i class="fa fa-search"></i>
+                </button>
+            </form>
         </div>
 
         <div class="auth-buttons">
             {{if .IsConnected}}
-                <div class="user-profile-header">
-                    <a href="/editaccount" class="user-profile-link" title="Paramètres du compte" style="text-decoration: none; color: inherit; display: flex; align-items: center;">
-                        <span class="user-pseudo" style="margin-right: 10px;">{{.Username}}</span>
+                <div class="user-profile-header" style="display: flex; align-items: center; gap: 15px;">
+                    <a href="/editaccount" class="user-profile-link" title="Paramètres du compte" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 10px;">
+                        <span class="user-pseudo" style="font-weight: bold; color: white;">{{.Username}}</span>
                         
-                        <div class="user-avatar" style="cursor: pointer; transition: transform 0.2s;">
-                        {{if .LoadedPP}}
-                            <img src="{{.LoadedPP}}" alt="Photo de profil" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 0.5px solid #ccc;" />
-                        {{else}}
-                            <img src="/static/pp/defaultPP.png" alt="Photo de profil par défaut" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 0.5px solid #ccc;" />
-                        {{end}}
+                        <div class="user-avatar">
+                            {{if .LoadedPP}}
+                                <img src="{{.LoadedPP}}" alt="Profil" style="width: 35px; height: 35px; object-fit: cover; border-radius: 50%; border: 1px solid var(--grad-orange);">
+                            {{else}}
+                                <img src="/static/pp/defaultPP.png" alt="Profil" style="width: 35px; height: 35px; object-fit: cover; border-radius: 50%; border: 1px solid #444;">
+                            {{end}}
                         </div>
                     </a>
                     
-                    <a href="/logout" class="logout-icon" title="Déconnexion" style="margin-left: 15px;">
-                        <i class="fa-solid fa-power-off"></i>
-                    </a>
+                    <form action="/logout" method="POST" style="display: inline;">
+                        <button type="submit" title="Déconnexion" style="background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 1.1rem;">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </form>
                 </div>
             {{else}}
                 <a href="/login" class="btn-login-text">Se connecter</a>
@@ -52,4 +60,4 @@
             {{end}}
         </div>
     </nav>
-{{end}}
+{{ end }}

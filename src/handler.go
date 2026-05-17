@@ -1,11 +1,15 @@
 package forum
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func GetUserFromSession(r *http.Request) *UserInfos {
@@ -45,6 +49,7 @@ func IsConnected(r *http.Request) bool {
 func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	user := GetUserFromSession(r)
+	LoadFlash(w, r, user)
 
 	pp, err := getUserPP(user.Email)
 	if err == nil {
@@ -52,25 +57,20 @@ func homeHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	} else {
 		user.LoadedPP = ""
 	}
-
-	tmpl, err := template.ParseFiles("pages/index.html", "pages/header.html", "pages/footer.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	data := struct {
-		*UserInfos
-		Page string
-	}{
-		UserInfos: user,
-		Page:      "home",
-	}
-	tmpl.ExecuteTemplate(w, "index.html", data)
+	http.Redirect(w, r, "/forum", http.StatusSeeOther)
 }
 
 func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	search := r.URL.Query().Get("q")  //ajout pr tri
+	sort := r.URL.Query().Get("sort") //ajout pr tri
+	fDate := r.URL.Query().Get("fDate")
+	minL, _ := strconv.Atoi(r.URL.Query().Get("minL"))
+	minC, _ := strconv.Atoi(r.URL.Query().Get("minC"))
+
 	user := GetUserFromSession(r)
+	LoadFlash(w, r, user)
 
 	pp, err := getUserPP(user.Email)
 	if err == nil {
@@ -79,17 +79,79 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		user.LoadedPP = ""
 	}
 
-	tmpl, err := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
-	if err != nil {
-		log.Fatal(err)
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+
+	var posts []Post
+	if query == "" {
+		posts, _ = GetAllPosts()
+	} else {
+		posts, _ = SearchPostsByTitle(query)
 	}
 
+	for i := range posts { //rempli val avant le tri car sinon func getallposts et SearchPostsByTitle ne remplisse pas count like ou com
+		posts[i].CountCom, _ = CountCom(posts[i].ID)
+		posts[i].CountLikes, _ = CountLikes(posts[i].ID)
+	}
+
+	posts = ApplyTri(posts, sort) //ajout pr tri
+
+	var postsAllInfos []PostAllInfos
+	for _, p := range posts {
+		pseudo, _ := GetPseudoByUserID(p.UserID)
+		p.CountCom, _ = CountCom(p.ID)
+		p.CountLikes, _ = CountLikes(p.ID)
+
+		if fDate != "" && p.DatePublication != fDate {
+			continue
+		}
+		if p.CountCom < minC {
+			continue
+		}
+		if p.CountLikes < minL {
+			continue
+		}
+
+		postsAllInfos = append(postsAllInfos, PostAllInfos{
+			ID:              p.ID,
+			Titre:           p.Titre,
+			Author:          pseudo,
+			Categorie:       p.Categorie,
+			ComCount:        p.CountCom,
+			LikeCount:       p.CountLikes,
+			DatePublication: p.DatePublication,
+		})
+	}
+
+	if sort == "likes_desc" || sort == "likes_asc" {
+		postsAllInfos = sortPostsbyLikes(postsAllInfos, sort)
+	} else if sort == "com_desc" || sort == "com_asc" {
+		postsAllInfos = sortPostsbyComments(postsAllInfos, sort)
+	} else if sort == "date_desc" || sort == "date_asc" {
+		postsAllInfos = sortPostsbyDate(postsAllInfos, sort)
+	}
+
+	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
+
 	data := struct {
+		Posts  []PostAllInfos
+		Search string
+		Sort   string
 		*UserInfos
-		Page string
+		Page  string
+		Query string
+		MinL  int
+		MinC  int
+		FDate string
 	}{
+		Posts:     postsAllInfos,
+		Search:    search,
+		Sort:      sort,
 		UserInfos: user,
 		Page:      "home",
+		Query:     query,
+		MinL:      minL,
+		MinC:      minC,
+		FDate:     fDate,
 	}
 
 	tmpl.ExecuteTemplate(w, "forum.html", data)
@@ -98,19 +160,85 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	user := GetUserFromSession(r)
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+	LoadFlash(w, r, user)
 
 	slug := r.URL.Path[len("/categories/"):]
 	displayTitle := strings.ReplaceAll(slug, "-", " ")
 	displayTitle = strings.Title(displayTitle)
 
+	sort := r.URL.Query().Get("sort")
+	search := r.URL.Query().Get("q")
+	fDate := r.URL.Query().Get("fDate")
+	minL, _ := strconv.Atoi(r.URL.Query().Get("minL"))
+	minC, _ := strconv.Atoi(r.URL.Query().Get("minC"))
+
+	posts, _ := GetAllPosts()
+
+	var postsInfos []PostAllInfos
+	for _, p := range posts {
+		if !strings.EqualFold(p.Categorie, displayTitle) {
+			continue
+		}
+
+		if search != "" && !strings.Contains(strings.ToLower(p.Titre), strings.ToLower(search)) {
+			continue
+		}
+
+		p.CountCom, _ = CountCom(p.ID)
+		p.CountLikes, _ = CountLikes(p.ID)
+
+		if fDate != "" && p.DatePublication != fDate {
+			continue
+		}
+		if p.CountCom < minC {
+			continue
+		}
+		if p.CountLikes < minL {
+			continue
+		}
+
+		author, _ := GetPseudoByUserID(p.UserID)
+		postsInfos = append(postsInfos, PostAllInfos{
+			ID:              p.ID,
+			Titre:           p.Titre,
+			Author:          author,
+			Categorie:       p.Categorie,
+			ComCount:        p.CountCom,
+			LikeCount:       p.CountLikes,
+			DatePublication: p.DatePublication,
+		})
+	}
+
+	if sort == "likes_desc" || sort == "likes_asc" {
+		postsInfos = sortPostsbyLikes(postsInfos, sort)
+	} else if sort == "com_desc" || sort == "com_asc" {
+		postsInfos = sortPostsbyComments(postsInfos, sort)
+	} else if sort == "date_desc" || sort == "date_asc" {
+		postsInfos = sortPostsbyDate(postsInfos, sort)
+	}
+
 	data := struct {
 		Title string
 		*UserInfos
-		Page string
+		Page  string
+		Query string
+		Posts []PostAllInfos
+		Sort  string
+		MinL  int
+		MinC  int
+		FDate string
 	}{
 		Title:     displayTitle,
 		UserInfos: user,
-		Page:      "category", // Aucune bouton du menu principal ne sera en dégradé
+		Page:      "category",
+		Query:     search,
+		Posts:     postsInfos,
+		Sort:      sort,
+		MinL:      minL,
+		MinC:      minC,
+		FDate:     fDate,
 	}
 
 	tmpl, err := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
@@ -125,12 +253,19 @@ func NetworkHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	user := GetUserFromSession(r)
 
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+
+	LoadFlash(w, r, user)
+
 	data := struct {
 		*UserInfos
-		Page string
+		Page  string
+		Query string
 	}{
 		UserInfos: user,
 		Page:      "reseau",
+		Query:     "",
 	}
 
 	tmpl, err := template.ParseFiles("pages/reseau.html", "pages/header.html", "pages/footer.html")
@@ -144,6 +279,11 @@ func NetworkHandler(w http.ResponseWriter, r *http.Request) {
 func HeartHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	user := GetUserFromSession(r)
+
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+
+	LoadFlash(w, r, user)
 
 	type HeartPost struct {
 		ID        int
@@ -166,7 +306,6 @@ func HeartHandler(w http.ResponseWriter, r *http.Request) {
     LIMIT 1`
 
 	err := db.QueryRow(query).Scan(&hp.ID, &hp.Titre, &hp.Contenu, &hp.Date, &hp.Auteur, &hp.LikeCount)
-
 	if err != nil {
 		hp = HeartPost{Titre: "Pas encore de favori", Contenu: "Faites vivre le forum pour voir apparaître un coup de cœur !"}
 	}
@@ -179,11 +318,13 @@ func HeartHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		*UserInfos
-		Page string
-		Post HeartPost
+		Page  string
+		Query string
+		Post  HeartPost
 	}{
 		UserInfos: user,
 		Page:      "heart",
+		Query:     "",
 		Post:      hp,
 	}
 
@@ -193,6 +334,7 @@ func HeartHandler(w http.ResponseWriter, r *http.Request) {
 func ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	user := GetUserFromSession(r)
+	LoadFlash(w, r, user)
 
 	resetSent := r.URL.Query().Get("reset_sent") == "true"
 
@@ -200,10 +342,12 @@ func ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 		*UserInfos
 		Page      string
 		ResetSent bool
+		Query     string
 	}{
 		UserInfos: user,
 		Page:      "forgot-password",
 		ResetSent: resetSent,
+		Query:     "",
 	}
 
 	tmpl, err := template.ParseFiles("pages/forgot-pwd.html", "pages/header.html", "pages/footer.html")
@@ -220,9 +364,7 @@ func SendResetLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email := r.FormValue("email")
-
 	DataForgotPasswordSend(w, r, email)
-
 	http.Redirect(w, r, "/login?reset_sent=true", http.StatusSeeOther)
 }
 
@@ -241,42 +383,28 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
 		user := GetUserFromSession(r)
+		LoadFlash(w, r, user)
 
 		token := r.URL.Query().Get("token")
-
 		_, isValid := ValidatePasswordResetToken(token)
 
 		if !isValid {
-			data := struct {
-				*UserInfos
-				ResetError string
-			}{
-				UserInfos:  user,
-				ResetError: "Lien de réinitialisation invalide ou expiré.",
-			}
-
-			tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
-			if err != nil {
-				fmt.Println("Erreur template:", err)
-				return
-			}
-			tmpl.ExecuteTemplate(w, "reset-password.html", data)
+			SetFlash(w, "error", "Lien de réinitialisation invalide ou expiré.")
+			http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
 			return
 		}
 
 		data := struct {
 			*UserInfos
-			Token        string
-			ResetError   string
-			ResetSuccess string
+			Token string
+			Query string
 		}{
-			UserInfos:    user,
-			Token:        token,
-			ResetError:   "",
-			ResetSuccess: "",
+			UserInfos: user,
+			Token:     token,
+			Query:     "",
 		}
 
-		tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
+		tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/footer.html")
 		if err != nil {
 			fmt.Println("Erreur template:", err)
 			return
@@ -291,65 +419,645 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		confirmPassword := r.FormValue("confirm_password")
 
 		email, isValid := ValidatePasswordResetToken(token)
-
 		if !isValid {
-			data := struct {
-				*UserInfos
-				ResetError string
-			}{
-				UserInfos:  &UserInfos{},
-				ResetError: "Lien de réinitialisation invalide ou expiré.",
-			}
-
-			tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
-			if err != nil {
-				fmt.Println("Erreur template:", err)
-				return
-			}
-			tmpl.ExecuteTemplate(w, "reset-password.html", data)
+			SetFlash(w, "error", "Lien de réinitialisation invalide ou expiré.")
+			http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
 			return
 		}
 
 		errorMsg := ResetPassword(email, newPassword, confirmPassword)
-
 		if errorMsg != "" {
-			data := struct {
-				*UserInfos
-				Token        string
-				ResetError   string
-				ResetSuccess string
-			}{
-				UserInfos:    &UserInfos{},
-				Token:        token,
-				ResetError:   errorMsg,
-				ResetSuccess: "",
-			}
-
-			tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
-			if err != nil {
-				fmt.Println("Erreur template:", err)
-				return
-			}
-			tmpl.ExecuteTemplate(w, "reset-password.html", data)
+			SetFlash(w, "error", errorMsg)
+			http.Redirect(w, r, "/reset-password?token="+url.QueryEscape(token), http.StatusSeeOther)
 			return
 		}
 
-		data := struct {
-			*UserInfos
-			ResetSuccess string
-		}{
-			UserInfos:    &UserInfos{},
-			ResetSuccess: "Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.",
-		}
-
-		tmpl, err := template.ParseFiles("pages/reset-password.html", "pages/header.html", "pages/footer.html")
-		if err != nil {
-			fmt.Println("Erreur template:", err)
-			return
-		}
-		tmpl.ExecuteTemplate(w, "reset-password.html", data)
+		SetFlash(w, "success", "Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+}
+
+/* ===== Gestion action user =====
+===== Partie post ===== */
+
+func GetUserID(r *http.Request) int {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		return 0
+	}
+
+	var id int
+	err := db.QueryRow("SELECT id FROM Users WHERE email = ?", user.Email).Scan(&id)
+	if err != nil {
+		fmt.Println("err GetUserID", err)
+		return 0
+	}
+	return id
+}
+
+func postCreate(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+
+	LoadFlash(w, r, user)
+
+	if r.Method == http.MethodGet {
+		tmpl, _ := template.ParseFiles("pages/postCreate.html", "pages/header.html", "pages/footer.html")
+		data := struct {
+			*UserInfos
+			Page  string
+			Query string
+		}{
+			UserInfos: user,
+			Page:      "postCreate",
+			Query:     "",
+		}
+		tmpl.ExecuteTemplate(w, "postCreate.html", data)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		titre := r.FormValue("titre")
+		contenu := r.FormValue("contenu")
+		categorie := r.FormValue("categorie")
+		date := time.Now().Format("2006-01-02")
+
+		userID := GetUserID(r)
+		CreatePost(titre, contenu, categorie, date, userID)
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+	}
+}
+
+func postUpdate(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	postID, _ := strconv.Atoi(r.FormValue("id"))
+	post, err := GetPostByID(postID)
+	if err != nil || post.UserID != GetUserID(r) {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	newTitre := r.FormValue("titre")
+	newContenu := r.FormValue("contenu")
+	newCategorie := r.FormValue("categorie")
+
+	UpdatePost(postID, newTitre, newContenu, newCategorie)
+	SetFlash(w, "success", "Post mis à jour avec succès.")
+	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+}
+
+func postDelete(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	postID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	if postID == 0 {
+		postID, _ = strconv.Atoi(r.FormValue("id"))
+	}
+
+	post, err := GetPostByID(postID)
+	if err != nil || post.UserID != GetUserID(r) {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	DeletePost(postID)
+	SetFlash(w, "success", "Post supprimé.")
+	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+}
+
+func seeOnePost(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+
+	LoadFlash(w, r, user)
+
+	postID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	post, err := GetPostByID(postID)
+	if err != nil {
+		http.Redirect(w, r, "/posts", http.StatusSeeOther)
+		return
+	}
+
+	rawComments, _ := GetComByPostID(postID)
+
+	var comments []ComNameAuthor
+	for _, c := range rawComments {
+		pseudo, _ := GetPseudoByUserID(c.UserID)
+
+		comments = append(comments, ComNameAuthor{
+			ID:       c.ID,
+			Contenu:  c.Contenu,
+			DateCom:  c.DateCom,
+			Author:   pseudo,
+			ParentID: c.ParentID,
+		})
+	}
+
+	likeCount, _ := CountLikes(postID)
+	comCount, _ := CountCom(postID) //peut etre pas necessaire a voir pr enelver apres
+	authorPseudo, _ := GetPseudoByUserID(post.UserID)
+
+	userID := GetUserID(r)
+	liked := false
+	if userID != 0 {
+		liked = HasLiked(userID, postID)
+	}
+
+	isAuthor := false
+	if userID != 0 && post.UserID == userID {
+		isAuthor = true
+	}
+
+	tmpl, _ := template.ParseFiles("pages/post.html", "pages/header.html", "pages/footer.html")
+
+	data := struct {
+		Post      Post
+		Comments  []ComNameAuthor
+		LikeCount int
+		ComCount  int
+		Author    string
+		Liked     bool
+		IsAuthor  bool
+		*UserInfos
+		Page  string
+		Query string
+	}{
+		Post:      post,
+		Comments:  comments,
+		LikeCount: likeCount,
+		ComCount:  comCount,
+		Author:    authorPseudo,
+		Liked:     liked,
+		IsAuthor:  isAuthor,
+		UserInfos: user,
+		Page:      "post",
+		Query:     "",
+	}
+
+	tmpl.ExecuteTemplate(w, "post.html", data)
+}
+
+type ComNameAuthor struct {
+	ID       int
+	Contenu  string
+	DateCom  string
+	Author   string
+	ParentID int
+}
+
+type PostAllInfos struct {
+	ID              int
+	Titre           string
+	Contenu         string
+	Categorie       string
+	DatePublication string
+	Author          string
+	ComCount        int
+	LikeCount       int
+}
+
+func seeAllPosts(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+	LoadFlash(w, r, user)
+
+	search := r.URL.Query().Get("q")
+	sort := r.URL.Query().Get("sort")
+	fDate := r.URL.Query().Get("fDate")
+	minL, _ := strconv.Atoi(r.URL.Query().Get("minL"))
+	minC, _ := strconv.Atoi(r.URL.Query().Get("minC"))
+
+	categoryFilter := ""
+	if strings.HasPrefix(r.URL.Path, "/categories/") {
+		categoryFilter = strings.TrimPrefix(r.URL.Path, "/categories/")
+	} else {
+		categoryFilter = r.URL.Query().Get("cat")
+	}
+
+	posts, err := GetAllPosts()
+	if err != nil {
+		fmt.Println("Erreur SQL posts:", err)
+		posts = []Post{}
+	}
+
+	var postsInfos []PostAllInfos
+	for _, p := range posts {
+		author, _ := GetPseudoByUserID(p.UserID)
+
+		if categoryFilter != "" && !strings.EqualFold(p.Categorie, categoryFilter) {
+			continue
+		}
+		if search != "" && !strings.Contains(strings.ToLower(p.Titre), strings.ToLower(search)) {
+			continue
+		}
+		if fDate != "" && p.DatePublication != fDate {
+			continue
+		}
+		if p.CountCom < minC {
+			continue
+		}
+		if p.CountLikes < minL {
+			continue
+		}
+
+		postsInfos = append(postsInfos, PostAllInfos{
+			ID:              p.ID,
+			Titre:           p.Titre,
+			Contenu:         p.Contenu,
+			Categorie:       p.Categorie,
+			DatePublication: p.DatePublication,
+			Author:          author,
+			ComCount:        p.CountCom,
+			LikeCount:       p.CountLikes,
+		})
+	}
+
+	if sort == "likes_desc" {
+		for i := 0; i < len(postsInfos); i++ {
+			for j := i + 1; j < len(postsInfos); j++ {
+				if postsInfos[i].LikeCount < postsInfos[j].LikeCount {
+					postsInfos[i], postsInfos[j] = postsInfos[j], postsInfos[i]
+				}
+			}
+		}
+	} else if sort == "com_desc" {
+		for i := 0; i < len(postsInfos); i++ {
+			for j := i + 1; j < len(postsInfos); j++ {
+				if postsInfos[i].ComCount < postsInfos[j].ComCount {
+					postsInfos[i], postsInfos[j] = postsInfos[j], postsInfos[i]
+				}
+			}
+		}
+	} else if sort == "date_desc" {
+		for i := 0; i < len(postsInfos); i++ {
+			for j := i + 1; j < len(postsInfos); j++ {
+				if postsInfos[i].DatePublication < postsInfos[j].DatePublication {
+					postsInfos[i], postsInfos[j] = postsInfos[j], postsInfos[i]
+				}
+			}
+		}
+	}
+
+	tmpl, err := template.ParseFiles("pages/category.html", "pages/header.html", "pages/footer.html")
+	if err != nil {
+		log.Printf("Erreur chargement template category: %v", err)
+		return
+	}
+
+	data := struct {
+		Title string
+		*UserInfos
+		Page  string
+		Query string
+		Posts []PostAllInfos
+		Sort  string
+		MinL  int
+		MinC  int
+		FDate string
+	}{
+		Title:     "Tous les posts",
+		UserInfos: user,
+		Page:      "posts",
+		Query:     search,
+		Posts:     postsInfos,
+		Sort:      sort,
+		MinL:      minL,
+		MinC:      minC,
+		FDate:     fDate,
+	}
+
+	tmpl.ExecuteTemplate(w, "category.html", data)
+}
+
+/*func seeAllPosts(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprint(w, "<h1>Test : Le handler fonctionne !</h1>")
+}*/
+
+func myPosts(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r) //recup user
+
+	posts, _ := GetUserPosts(GetUserID(r))
+
+	tmpl, _ := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
+
+	data := struct {
+		Posts []Post
+		*UserInfos
+		Page  string
+		Query string
+	}{
+		Posts:     posts,
+		UserInfos: user,
+		Page:      "myPosts",
+		Query:     "",
+	}
+
+	tmpl.ExecuteTemplate(w, "account.html", data)
+}
+
+/* ===== Partie com reper ===== */
+
+func comCreate(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json") //config réponse format Json (api)
+
+	userID := GetUserID(r)
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		w.WriteHeader(http.StatusUnauthorized) //pour l'erreur 401
+		w.Write([]byte(`{error": "Vous devez etre connecter pour commenter ou repondre}`))
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		contenu := r.FormValue("contenu")
+		postID, _ := strconv.Atoi(r.FormValue("post_id"))
+		parentID, _ := strconv.Atoi(r.FormValue("parent_id"))
+		date := time.Now().Format("2006-01-02")
+
+		post, err := GetPostByID(postID)
+		if err == nil && post.UserID == userID && parentID == 0 {
+			w.WriteHeader(http.StatusBadRequest) // Erreur 400
+			w.Write([]byte(`{"error": "Vous ne pouvez pas ajouter de commentaire sur votre propre publication."}`))
+			// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+			return
+		}
+
+		CreateCom(contenu, date, userID, postID, parentID)
+		err = CreateCom(contenu, date, userID, postID, parentID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{"error": "Erreur lors de l'enregistrement du commentaire."}`))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status": "success", "message": "Commentaire ajouté avec succès !"}`))
+		return
+		// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		return
+	}
+
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	// http.Redirect(w, r, "/posts", http.StatusSeeOther) //secu si qlq accede en get car get pas id pas comme post donc au cas ou
+}
+
+func comUpdate(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	comID, _ := strconv.Atoi(r.FormValue("id"))
+	com, err := GetComByID(comID)
+	if err != nil || com.UserID != GetUserID(r) {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	newContenu := r.FormValue("contenu")
+	UpdateCom(comID, newContenu)
+	SetFlash(w, "success", "Commentaire mis à jour.")
+	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+}
+
+func comDelete(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	comID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	com, err := GetComByID(comID)
+	if err != nil || com.UserID != GetUserID(r) {
+		http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+		return
+	}
+
+	DeleteCom(comID)
+	SetFlash(w, "success", "Commentaire supprimé.")
+	http.Redirect(w, r, "/editaccount", http.StatusSeeOther)
+}
+
+func seeMyComs(w http.ResponseWriter, r *http.Request) { //page profil user
+	user := GetUserFromSession(r)
+
+	comments, _ := GetUserCom(GetUserID(r))
+
+	tmpl, _ := template.ParseFiles("pages/account.html", "pages/header.html", "pages/footer.html")
+
+	data := struct {
+		Comments []Com
+		*UserInfos
+		Page  string
+		Query string
+	}{
+		Comments:  comments,
+		UserInfos: user,
+		Page:      "myComs",
+		Query:     "",
+	}
+
+	tmpl.ExecuteTemplate(w, "account.html", data)
+}
+
+/* ===== Partie likes ===== */
+
+func likePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userID := GetUserID(r)
+	postID, _ := strconv.Atoi(r.FormValue("post_id"))
+
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		w.WriteHeader(http.StatusUnauthorized) // Erreur 401
+		w.Write([]byte(`{"status": "error", "message": "Vous devez être connecté pour effectuer cette action."}`))
+		return
+	}
+
+	post, err := GetPostByID(postID)
+	if err == nil && post.UserID == userID {
+		w.WriteHeader(http.StatusBadRequest) // Erreur 400
+		w.Write([]byte(`{"status": "error", "message": "Vous ne pouvez pas aimer votre propre publication."}`))
+		return
+	}
+
+	liked := false
+	if HasLiked(userID, postID) {
+		UnlikePost(userID, postID)
+	} else {
+		LikePost(userID, postID)
+		liked = true
+	}
+
+	newCount, _ := CountLikes(postID)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status": "success", "liked": %t, "count": %d}`, liked, newCount)
+	// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+}
+
+func unLikePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	userID := GetUserID(r)
+	postID, _ := strconv.Atoi(r.FormValue("post_id"))
+
+	user := GetUserFromSession(r)
+	if !user.IsConnected {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"status": "error", "message": "Vous devez être connecté pour effectuer cette action."}`))
+		return
+	}
+
+	UnlikePost(userID, postID)
+	newCount, _ := CountLikes(postID)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, `{"status": "success", "liked": false, "count": %d}`, newCount)
+	// http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+}
+
+/* ===== Partie recherche réseau ===== */
+
+func seeAllUsers(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+	LoadFlash(w, r, user)
+	users, _ := GetAllUsers()
+
+	tmpl, _ := template.ParseFiles("pages/seeAllUsers.html", "pages/header.html", "pages/footer.html")
+
+	data := struct {
+		Users []User
+		*UserInfos
+		Page  string
+		Query string
+	}{
+		Users:     users,
+		UserInfos: user,
+		Page:      "seeAllUsers",
+		Query:     "",
+	}
+
+	tmpl.ExecuteTemplate(w, "seeAllUsers.html", data)
+}
+
+func seeUser(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromSession(r)
+	pp, _ := getUserPP(user.Email)
+	user.LoadedPP = pp
+
+	LoadFlash(w, r, user)
+
+	userID, _ := strconv.Atoi(r.URL.Query().Get("id"))
+
+	profile, err := GetUserByID(userID)
+	if err != nil {
+		http.Redirect(w, r, "/seeAllUsers", http.StatusSeeOther)
+		return
+	}
+
+	posts, _ := GetUserPosts(userID)
+	comments, _ := GetUserCom(userID)
+
+	tmpl, _ := template.ParseFiles("pages/seeUser.html", "pages/header.html", "pages/footer.html")
+
+	data := struct {
+		Profile  User
+		Posts    []Post
+		Comments []Com
+		*UserInfos
+		Page  string
+		Query string
+	}{
+		Profile:   profile,
+		Posts:     posts,
+		Comments:  comments,
+		UserInfos: user,
+		Page:      "seeUser",
+		Query:     "",
+	}
+
+	tmpl.ExecuteTemplate(w, "seeUser.html", data)
+}
+
+func sortPostsbyLikes(p []PostAllInfos, order string) []PostAllInfos {
+	for i := 0; i < len(p); i++ {
+		for j := i + 1; j < len(p); j++ {
+			if order == "likes_desc" && p[i].LikeCount < p[j].LikeCount || order == "likes_asc" && p[i].LikeCount > p[j].LikeCount {
+				p[i], p[j] = p[j], p[i]
+			}
+		}
+	}
+	return p
+}
+
+func sortPostsbyComments(p []PostAllInfos, order string) []PostAllInfos {
+	for i := 0; i < len(p); i++ {
+		for j := i + 1; j < len(p); j++ {
+			if order == "com_desc" && p[i].ComCount < p[j].ComCount || order == "com_asc" && p[i].ComCount > p[j].ComCount {
+				p[i], p[j] = p[j], p[i]
+			}
+		}
+	}
+	return p
+}
+
+func sortPostsbyDate(p []PostAllInfos, order string) []PostAllInfos {
+	for i := 0; i < len(p); i++ {
+		for j := i + 1; j < len(p); j++ {
+			if order == "date_desc" && p[i].DatePublication < p[j].DatePublication || order == "date_asc" && p[i].DatePublication > p[j].DatePublication {
+				p[i], p[j] = p[j], p[i]
+			}
+		}
+	}
+	return p
+}
+
+func API_SearchUsersHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	query := strings.TrimSpace(r.URL.Query().Get("username"))
+	if query == "" {
+		w.Write([]byte(`[]`))
+		return
+	}
+
+	users, err := SearchUsersByName(query)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error": "Erreur lors de la recherche"}`))
+		return
+	}
+
+	json.NewEncoder(w).Encode(users)
 }

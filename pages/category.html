@@ -2,20 +2,45 @@
 
 <main class="container">
     <div class="category-header">
-        <h1 class="category-title">{{.Title}}</h1>
-        {{if .IsConnected}}
-            <a href="/create-post?cat={{.Title}}" class="btn-post">+ Poster</a>
+        <h1 class="category-title">{{if .Title}}{{.Title}}{{else}}Tous les posts{{end}}</h1>
+        
+        {{if .UserInfos.IsConnected}}
+            <a href="/postCreate?cat={{.Title}}" class="btn-post">+ Poster</a>
         {{end}}
     </div>
 
-    <div class="filter-tabs">
-        <a href="#" class="filter-link">TOP</a>
-        <a href="#" class="filter-link">RECENTS</a>
+    <div class="filter-tabs" style="display: flex; gap: 20px; margin-bottom: 20px;">
+        <a href="?sort=likes_desc{{if .Query}}&q={{.Query}}{{end}}" class="filter-link {{if eq .Sort "likes_desc"}}active-tab{{end}}" style="text-decoration: none; color: inherit; position: relative; padding-bottom: 5px;">TOP</a>
+        <a href="?sort=date_desc{{if .Query}}&q={{.Query}}{{end}}" class="filter-link {{if eq .Sort "date_desc"}}active-tab{{end}}" style="text-decoration: none; color: inherit; position: relative; padding-bottom: 5px;">RECENTS</a>
     </div>
 
     <div class="action-bar">
-        <button class="btn-discussion">Discussion Générale</button>
+        <button href="/posts" class="btn-discussion">Discussion Générale</button>
     </div>
+
+    {{if .Query}}
+    <div class="filter-bar" style="background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <form method="get" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            <input type="hidden" name="q" value="{{.Query}}">
+            <input type="hidden" name="sort" value="{{.Sort}}">
+
+            <div>
+                <label style="display:block; color:#888; font-size:12px;">Date</label>
+                <input type="date" name="fDate" value="{{.FDate}}" style="padding:5px; border-radius:4px; background:#D9D9D9; border:none; color:#000;">
+            </div>
+            <div>
+                <label style="display:block; color:#888; font-size:12px;">Likes min.</label>
+                <input type="number" name="minL" value="{{if .MinL}}{{.MinL}}{{else}}0{{end}}" placeholder="0" style="width:60px; padding:5px; border-radius:4px; background:#D9D9D9; border:none; color:#000;">
+            </div>
+            <div>
+                <label style="display:block; color:#888; font-size:12px;">Coms min.</label>
+                <input type="number" name="minC" value="{{if .MinC}}{{.MinC}}{{else}}0{{end}}" placeholder="0" style="width:60px; padding:5px; border-radius:4px; background:#D9D9D9; border:none; color:#000;">
+            </div>
+            <button type="submit" class="btn-post">Appliquer les filtres</button>
+            <a href="?q={{.Query}}" style="color:#888; text-decoration:none; font-size:12px; margin-left:10px;">Reset</a>
+        </form>
+    </div>
+    {{end}}
 
     <div class="forum-table-wrapper">
         <table class="forum-table">
@@ -23,27 +48,29 @@
                 <tr>
                     <th>Sujet</th>
                     <th>Auteur</th>
-                    <th>Réponses</th>
-                    <th>Activité</th>
+                    <th>Catégorie</th>
+                    <th><a href="?sort={{if eq .Sort "com_desc"}}com_asc{{else}}com_desc{{end}}{{if .Query}}&q={{.Query}}{{end}}&minL={{.MinL}}&minC={{.MinC}}&fDate={{.FDate}}" style="color:white; text-decoration:none;">Réponses {{if eq .Sort "com_desc"}}▼{{else if eq .Sort "com_asc"}}▲{{else}}↕{{end}}</a></th>
+                    <th><a href="?sort={{if eq .Sort "date_desc"}}date_asc{{else}}date_desc{{end}}{{if .Query}}&q={{.Query}}{{end}}&minL={{.MinL}}&minC={{.MinC}}&fDate={{.FDate}}" style="color:white; text-decoration:none;">Date {{if eq .Sort "date_desc"}}▼{{else if eq .Sort "date_asc"}}▲{{else}}↕{{end}}</a></th>
+                    <th><a href="?sort={{if eq .Sort "likes_desc"}}likes_asc{{else}}likes_desc{{end}}{{if .Query}}&q={{.Query}}{{end}}&minL={{.MinL}}&minC={{.MinC}}&fDate={{.FDate}}" style="color:white; text-decoration:none;">Likes {{if eq .Sort "likes_desc"}}▼{{else if eq .Sort "likes_asc"}}▲{{else}}↕{{end}}</a></th>
                 </tr>
             </thead>
             <tbody>
+                {{range .Posts}}
                 <tr>
-                    <td>
-                        <div class="subject-title">{{.Sujet}}</div>
-                    </td>
-                    <td class="text-muted">{{.Pseudo}}</td>
-                    <td class="text-muted">{{.Reponses}}</td>
-                    <td class="text-muted">{{.Activite}}</td>
+                    <td><a href="/post?id={{.ID}}" class="subject-title">{{.Titre}}</a></td>
+                    <td class="text-muted">{{.Author}}</td>
+                    <td class="text-muted">{{.Categorie}}</td>
+                    <td class="text-muted">{{.ComCount}}</td>
+                    <td class="text-muted">{{.DatePublication}}</td>
+                    <td class="text-muted">🌶️ {{.LikeCount}}</td>
                 </tr>
+                {{else}}
                 <tr>
-                    <td>
-                        <div class="subject-title">{{.Sujet}}</div>
+                    <td colspan="6" style="text-align: center; padding: 20px; color: #888;">
+                        Aucun post trouvé dans cette catégorie avec ces critères.
                     </td>
-                    <td class="text-muted">{{.Pseudo}}</td>
-                    <td class="text-muted">{{.Reponses}}</td>
-                    <td class="text-muted">{{.Activite}}</td>
                 </tr>
+                {{end}}
             </tbody>
         </table>
     </div>

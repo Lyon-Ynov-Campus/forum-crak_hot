@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "github.com/mattn/go-sqlite3" //ps oublier import github.com voir repo soutien
+	"sort"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func OpenDB() (*sql.DB, error) {
@@ -16,148 +18,107 @@ func OpenDB() (*sql.DB, error) {
 
 var db *sql.DB
 
-func InitDB() { //corps debut repo soutien rev
+func InitDB() {
 	var err error
 	db, err = sql.Open("sqlite3", "Forum.db")
 	if err != nil {
 		panic(err)
 	}
-
 }
 
-func CreateDB() { //rev slide 39 soutien pour creer table
+func CreateDB() {
 	InitDB()
-	CreateTableUser := `
-	CREATE TABLE IF NOT EXISTS Users(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	username TEXT NOT NULL UNIQUE,
-	email TEXT NOT NULL UNIQUE,
-	password_hash TEXT NOT NULL,
-	photo_profil TEXT 
+
+	schema := `
+	CREATE TABLE IF NOT EXISTS Users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		username TEXT NOT NULL UNIQUE,
+		email TEXT NOT NULL UNIQUE,
+		password_hash TEXT NOT NULL,
+		photo_profil TEXT 
 	);
-	` //type TEXT pr photo car soit nom du file soit url de la P
 
-	_, err := db.Exec(CreateTableUser)
-	if err != nil {
-		fmt.Println("erreur table users", err)
-		panic(err)
-	}
-
-	CreateTablePost := `
-	CREATE TABLE IF NOT EXISTS Post(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	titre TEXT NOT NULL,
-	contenu TEXT NOT NULL,
-	categorie TEXT NOT NULL,
-	date_publication TEXT NOT NULL,
-	user_id INTEGER NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+	CREATE TABLE IF NOT EXISTS Post (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		titre TEXT NOT NULL,
+		contenu TEXT NOT NULL,
+		categorie TEXT,
+		date_publication TEXT,
+		user_id INTEGER,
+		FOREIGN KEY(user_id) REFERENCES Users(id) ON DELETE CASCADE
 	);
-	`
 
-	_, err = db.Exec(CreateTablePost)
-	if err != nil {
-		fmt.Println("erreur table post", err)
-		panic(err)
-	}
-
-	CreateTableCommentaire := `
-	CREATE TABLE IF NOT EXISTS Commentaire(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	contenu TEXT NOT NULL,
-	date_com TEXT NOT NULL,
-	user_id INTEGER NOT NULL,
-	post_id INTEGER NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
-	FOREIGN KEY (post_id) REFERENCES Post(id) ON DELETE CASCADE
+	CREATE TABLE IF NOT EXISTS Commentaire (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		contenu TEXT NOT NULL,
+		date_com TEXT,
+		user_id INTEGER,
+		post_id INTEGER,
+		parent_id INTEGER DEFAULT 0, --0 signifie que c'est un commentaire principal
+		FOREIGN KEY(user_id) REFERENCES Users(id) ON DELETE CASCADE,
+		FOREIGN KEY(post_id) REFERENCES Post(id) ON DELETE CASCADE
 	);
-	`
 
-	_, err = db.Exec(CreateTableCommentaire)
-	if err != nil {
-		fmt.Println("erreur table commentaire", err)
-		panic(err)
-	}
-
-	CreateTableLike := `
-	CREATE TABLE IF NOT EXISTS Like(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	user_id INTEGER NOT NULL,
-	post_id INTEGER NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE,
-	FOREIGN KEY (post_id) REFERENCES Post(id) ON DELETE CASCADE,
-	UNIQUE(user_id, post_id)
+	CREATE TABLE IF NOT EXISTS Like (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER,
+		post_id INTEGER,
+		FOREIGN KEY(user_id) REFERENCES Users(id) ON DELETE CASCADE,
+		FOREIGN KEY(post_id) REFERENCES Post(id) ON DELETE CASCADE,
+		UNIQUE(user_id, post_id)
 	);
-	` //rev UNIQUE de w3scool pr pas que user like 2 fois
 
-	_, err = db.Exec(CreateTableLike) //att rappel var deja creer donc pas remmettre := mais =
-	if err != nil {
-		fmt.Println("erreur table Like", err)
-		panic(err)
-	}
-
-	CreateTableSession := `
-	CREATE TABLE IF NOT EXISTS Session(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	token TEXT NOT NULL,
-	user_id INTEGER NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+	CREATE TABLE IF NOT EXISTS Session (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER,
+		token TEXT NOT NULL,
+		FOREIGN KEY(user_id) REFERENCES Users(id) ON DELETE CASCADE
 	);
-	` //rev doc datacamp pour ON DELETE CASCADE pour consigne effacer data si compte suppr
 
-	_, err = db.Exec(CreateTableSession)
-	if err != nil {
-		fmt.Println("erreur table session", err)
-		panic(err)
-	}
-
-	CreateTablePasswordReset := `
-	CREATE TABLE IF NOT EXISTS PasswordReset(
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	email TEXT NOT NULL,
-	token TEXT NOT NULL UNIQUE,
-	expiration TEXT NOT NULL,
-	created_at TEXT NOT NULL
+	CREATE TABLE IF NOT EXISTS PasswordReset (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		email TEXT NOT NULL,
+		token TEXT NOT NULL UNIQUE,
+		expiration TEXT NOT NULL,
+		created_at TEXT NOT NULL
 	);
 	`
-
-	_, err = db.Exec(CreateTablePasswordReset)
+	_, err := db.Exec(schema)
 	if err != nil {
-		fmt.Println("erreur table password_reset", err)
+		fmt.Println("Erreur lors de la création des tables:", err)
 		panic(err)
 	}
-
 }
 
 type User struct {
-	ID          int
-	Pseudo      string
-	Email       string
-	MotDePasse  string
-	PhotoProfil string //a voir car optionnel
+	ID          int    `json:"id"`
+	Pseudo      string `json:"pseudo"`
+	Email       string `json:"email"`
+	MotDePasse  string `json:"mot_de_passe"`
+	PhotoProfil string `json:"photo_profil"`
 }
 
 type Post struct {
-	ID              int
-	Titre           string
-	Contenu         string
-	Categorie       string
-	DatePublication string
-	UserID          int
+	ID              int    `json:"id"`
+	Titre           string `json:"titre"`
+	Contenu         string `json:"contenu"`
+	Categorie       string `json:"categorie"`
+	DatePublication string `json:"date_publication"`
+	UserID          int    `json:"user_id"`
+	CountLikes      int    `json:"count_likes"`
+	CountCom        int    `json:"count_com"`
 }
 
 type Com struct {
-	ID      int
-	Contenu string
-	DateCom string
-	UserID  int
-	PostID  int
+	ID      	int    `json:"id"`
+	Contenu		string `json:"contenu"`
+	DateCom		string `json:"date_com"`
+	UserID		int    `json:"user_id"`
+	PostID		int    `json:"post_id"`
+	ParentID	int		`json:"parent_id"`
 }
 
-// rappel dysca : ? val a fournir + tard
-// PARTIE USER
-
-func CreateUser(pseudo, email, motDePasse string) error { //creer profil
+func CreateUser(pseudo, email, motDePasse string) error {
 	insertQuery := `
         INSERT INTO User(pseudo, email, mot_de_passe)
         VALUES(?, ?, ?)
@@ -166,7 +127,7 @@ func CreateUser(pseudo, email, motDePasse string) error { //creer profil
 	return err
 }
 
-func GetUserByID(id int) (User, error) { //recup user par id car si on veut afficher info d'un user on doit recup les infos via id
+func GetUserByID(id int) (User, error) {
 	var u User
 	row := db.QueryRow(`
         SELECT id, pseudo, email, mot_de_passe, photo_profil
@@ -178,35 +139,20 @@ func GetUserByID(id int) (User, error) { //recup user par id car si on veut affi
 	return u, err
 }
 
-//partie update de la page profil user
+/* ===== Partie update de la page profil user ===== */
 
 func UpdateUEmail(id int, newEmail string) error {
-	updateQuery := `
-        UPDATE User
-        SET email = ?
-        WHERE id = ?
-    `
-	_, err := db.Exec(updateQuery, newEmail, id)
+	_, err := db.Exec("UPDATE Users SET email = ? WHERE id = ?", newEmail, id)
 	return err
 }
 
 func UpdateUPseudo(id int, newPseudo string) error {
-	updateQuery := `
-        UPDATE User
-        SET pseudo = ?
-        WHERE id = ?
-    `
-	_, err := db.Exec(updateQuery, newPseudo, id)
+	_, err := db.Exec("UPDATE Users SET username = ? WHERE id = ?", newPseudo, id)
 	return err
 }
 
-func UpdateUPassword(id int, newPassword string) error {
-	updateQuery := `
-        UPDATE User
-        SET mot_de_passe = ?
-        WHERE id = ?
-    `
-	_, err := db.Exec(updateQuery, newPassword, id)
+func UpdateUPassword(id int, newHash string) error {
+	_, err := db.Exec("UPDATE Users SET password_hash = ? WHERE id = ?", newHash, id)
 	return err
 }
 
@@ -221,16 +167,11 @@ func UpdateUPhoto(id int, photo string) error {
 }
 
 func GetUserPosts(userID int) ([]Post, error) {
-	rows, err := db.Query(`
-        SELECT id, titre, contenu, date_publication, user_id
-        FROM Post
-        WHERE user_id = ?
-    `, userID)
+	rows, err := db.Query("SELECT id, titre, contenu, date_publication, user_id FROM Post WHERE user_id = ?", userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var posts []Post
 	for rows.Next() {
 		var p Post
@@ -269,59 +210,37 @@ func DeleteUser(id int) error { //supprimer compte avec tout data
 	return err
 }
 
-//PARITE post
+/* ===== Partie posts =====*/
 
-func CreatePost(titre, contenu, categorie, datePublication string, userID int) error {
-	insertQuery := `
-        INSERT INTO Post(titre, contenu, categorie, date_publication, user_id)
-        VALUES(?, ?, ?, ?, ?)
-    `
-	_, err := db.Exec(insertQuery, titre, contenu, categorie, datePublication, userID)
+func CreatePost(titre, contenu, categorie, date string, userID int) error {
+	_, err := db.Exec("INSERT INTO Post (titre, contenu, categorie, date_publication, user_id) VALUES (?, ?, ?, ?, ?)",
+		titre, contenu, categorie, date, userID)
 	return err
 }
 
-func GetPostByID(id int) (Post, error) { //recup 1 seul post grace a son id
+func GetPostByID(id int) (Post, error) {
 	var p Post
-
-	row := db.QueryRow(`
-        SELECT id, titre, contenu, categorie, date_publication, user_id
-        FROM Post
-        WHERE id = ?
-    `, id)
-
-	err := row.Scan(&p.ID, &p.Titre, &p.Contenu, &p.Categorie, &p.DatePublication, &p.UserID)
+	err := db.QueryRow("SELECT id, titre, contenu, categorie, date_publication, user_id FROM Post WHERE id = ?", id).Scan(&p.ID, &p.Titre, &p.Contenu, &p.Categorie, &p.DatePublication, &p.UserID)
 	return p, err
 }
 
 func UpdatePost(id int, newTitre, newContenu, newCategorie string) error {
-	updateQuery := `
-        UPDATE Post
-        SET titre = ?, contenu = ?, categorie = ?
-        WHERE id = ?
-    `
-	_, err := db.Exec(updateQuery, newTitre, newContenu, newCategorie, id)
+	_, err := db.Exec("UPDATE Post SET titre = ?, contenu = ?, categorie = ? WHERE id = ?", newTitre, newContenu, newCategorie, id)
 	return err
 }
 
 func DeletePost(id int) error {
-	deleteQuery := `
-        DELETE FROM Post
-        WHERE id = ?
-    `
-	_, err := db.Exec(deleteQuery, id)
+	db.Exec("DELETE FROM Commentaire WHERE post_id = ?", id)
+	_, err := db.Exec("DELETE FROM Post WHERE id = ?", id)
 	return err
 }
 
 func GetAllPosts() ([]Post, error) {
-	rows, err := db.Query(`
-        SELECT id, titre, contenu, categorie, date_publication, user_id
-        FROM Post
-    `)
+	rows, err := db.Query("SELECT id, titre, contenu, categorie, date_publication, user_id FROM Post ORDER BY id DESC")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var posts []Post
 	for rows.Next() {
 		var p Post
@@ -331,26 +250,17 @@ func GetAllPosts() ([]Post, error) {
 	return posts, nil
 }
 
-func GetPseudoByUserID(id int) (string, error) { //affiche autzur d'un post
+func GetPseudoByUserID(id int) (string, error) {
 	var pseudo string
-	row := db.QueryRow(`
-        SELECT pseudo
-        FROM User
-        WHERE id = ?
-    `, id)
-
-	err := row.Scan(&pseudo)
+	err := db.QueryRow("SELECT username FROM Users WHERE id = ?", id).Scan(&pseudo)
 	return pseudo, err
 }
 
-// PARTIE Commetnaire
+/* ===== Patie commentaires ===== */
 
-func CreateCom(contenu, dateCom string, userID, postID int) error {
-	insertQuery := `
-        INSERT INTO Commentaire(contenu, date_com, user_id, post_id)
-        VALUES(?, ?, ?, ?)
-    `
-	_, err := db.Exec(insertQuery, contenu, dateCom, userID, postID)
+func CreateCom(contenu, dateCom string, userID, postID int, parentID int) error {
+	_, err := db.Exec("INSERT INTO Commentaire (contenu, date_com, user_id, post_id, parent_id) VALUES (?, ?, ?, ?, ?)",
+		contenu, dateCom, userID, postID, parentID)
 	return err
 }
 
@@ -373,21 +283,16 @@ func DeleteCom(id int) error {
 	return err
 }
 
-func GetComByPostID(postID int) ([]Com, error) { //recup tout les comm d'un post precis
-	rows, err := db.Query(`
-        SELECT id, contenu, date_com, user_id, post_id
-        FROM Commentaire
-        WHERE post_id = ?
-    `, postID)
+func GetComByPostID(postID int) ([]Com, error) {
+	rows, err := db.Query("SELECT id, contenu, date_com, user_id, post_id, parent_id FROM Commentaire WHERE post_id = ?", postID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var comments []Com
 	for rows.Next() {
 		var c Com
-		rows.Scan(&c.ID, &c.Contenu, &c.DateCom, &c.UserID, &c.PostID)
+		rows.Scan(&c.ID, &c.Contenu, &c.DateCom, &c.UserID, &c.PostID, &c.ParentID)
 		comments = append(comments, c)
 	}
 	return comments, nil
@@ -395,63 +300,55 @@ func GetComByPostID(postID int) ([]Com, error) { //recup tout les comm d'un post
 
 func CountCom(postID int) (int, error) {
 	var count int
-
-	row := db.QueryRow(`
-        SELECT COUNT(*)
-        FROM Commentaire
-        WHERE post_id = ?
-    `, postID)
-
-	err := row.Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM Commentaire WHERE post_id = ?", postID).Scan(&count)
 	return count, err
 }
 
-//PARTIE Like
+func GetComByID(id int) (Com, error) {
+	var c Com
+
+	row := db.QueryRow(`
+        SELECT id, contenu, date_com, user_id, post_id
+        FROM Commentaire
+        WHERE id = ?
+    `, id)
+
+	err := row.Scan(&c.ID, &c.Contenu, &c.DateCom, &c.UserID, &c.PostID)
+	return c, err
+}
+
+/* ===== Partie likes ===== */
 
 func LikePost(userID, postID int) error {
-	insertQuery := `
-        INSERT INTO Like(user_id, post_id)
-        VALUES(?, ?)
-    `
-	_, err := db.Exec(insertQuery, userID, postID)
+	_, err := db.Exec("INSERT INTO Like (user_id, post_id) VALUES (?, ?)", userID, postID)
 	return err
 }
 
 func UnlikePost(userID, postID int) error {
-	deleteQuery := `
-        DELETE FROM Like
-        WHERE user_id = ? AND post_id = ?
-    `
-	_, err := db.Exec(deleteQuery, userID, postID)
+	_, err := db.Exec("DELETE FROM Like WHERE user_id = ? AND post_id = ?", userID, postID)
 	return err
 }
 
 func CountLikes(postID int) (int, error) {
 	var count int
-
-	row := db.QueryRow(`
-        SELECT COUNT(*)
-        FROM Like
-        WHERE post_id = ?
-    `, postID)
-
-	err := row.Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM Like WHERE post_id = ?", postID).Scan(&count)
 	return count, err
 }
 
-//Partie recherche
+func HasLiked(userID, postID int) bool {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM Like WHERE user_id = ? AND post_id = ?", userID, postID).Scan(&count)
+	return err == nil && count > 0
+}
 
-func SearchPostsByTitle(r string) ([]Post, error) {
-	rows, err := db.Query(`
-        SELECT id, titre, contenu, categorie, date_publication, user_id
-        FROM Post
-        WHERE titre LIKE ?
-    `, "%"+r+"%") //le %% c tout les text qui contient x mot ligne faite par IA
+/* ===== Partie recherche =====*/
+
+func SearchPostsByTitle(query string) ([]Post, error) {
+	rows, err := db.Query("SELECT id, titre, contenu, categorie, date_publication, user_id FROM Post WHERE titre LIKE ?", "%"+query+"%")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var posts []Post
 	for rows.Next() {
 		var p Post
@@ -461,18 +358,14 @@ func SearchPostsByTitle(r string) ([]Post, error) {
 	return posts, nil
 }
 
-//partie reseau
+/* ===== Partie réseau ===== */
 
 func GetAllUsers() ([]User, error) {
-	rows, err := db.Query(`
-        SELECT id,email, pseudo, photo_profil
-        FROM User
-    `)
+	rows, err := db.Query("SELECT id, email, username, photo_profil FROM Users")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var users []User
 	for rows.Next() {
 		var u User
@@ -483,16 +376,11 @@ func GetAllUsers() ([]User, error) {
 }
 
 func SearchUsersByName(pseudo string) ([]User, error) {
-	rows, err := db.Query(`
-        SELECT id,email, pseudo, photo_profil
-        FROM User
-        WHERE pseudo LIKE ?
-    `, "%"+pseudo+"%") //ligne IA
+	rows, err := db.Query("SELECT id, email, username, photo_profil FROM Users WHERE username LIKE ?", "%"+pseudo+"%")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
 	var users []User
 	for rows.Next() {
 		var u User
@@ -500,4 +388,90 @@ func SearchUsersByName(pseudo string) ([]User, error) {
 		users = append(users, u)
 	}
 	return users, nil
+}
+
+func ApplyTri(posts []Post, sortPar string) []Post {
+	switch sortPar {
+	case "date_asc":
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].DatePublication < posts[j].DatePublication
+		})
+	case "date_desc":
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].DatePublication > posts[j].DatePublication
+		})
+	case "likes_asc":
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountLikes < posts[j].CountLikes
+		})
+	case "likes_desc":
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountLikes > posts[j].CountLikes
+		})
+	case "com_asc":
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountCom < posts[j].CountCom
+		})
+	case "com_desc":
+		sort.Slice(posts, func(i, j int) bool {
+			return posts[i].CountCom > posts[j].CountCom
+		})
+	}
+	return posts
+}
+
+func getUserPP(email string) (string, error) {
+	var pp string
+	err := db.QueryRow("SELECT photo_profil FROM Users WHERE email = ?", email).Scan(&pp)
+	return pp, err
+}
+
+func updateUserPP(email string, ppURL string) error {
+	_, err := db.Exec("UPDATE Users SET photo_profil = ? WHERE email = ?", ppURL, email)
+	return err
+}
+
+
+func GetSearchSortWithFilters(search, sort, filterDate string, minLikes, minComs int) []Post {
+	query := `
+        SELECT 
+            p.id, p.titre, p.contenu, p.categorie, p.date_publication, p.user_id,
+            (SELECT COUNT(*) FROM Like WHERE post_id = p.id) AS likeCount,
+            (SELECT COUNT(*) FROM Commentaire WHERE post_id = p.id) AS comCount
+        FROM Post p
+        WHERE p.titre LIKE ?`
+
+	var args []interface{}
+	args = append(args, "%"+search+"%")
+
+	if filterDate != "" {
+        query += " AND p.date_publication = ?"
+        args = append(args, filterDate)
+    }
+
+	query += " GROUP BY p.id HAVING likeCount >= ? AND comCount >= ?"
+    args = append(args, minLikes, minComs)
+
+	switch sort {
+    case "date_asc": query += " ORDER BY p.date_publication ASC"
+    case "date_desc": query += " ORDER BY p.date_publication DESC"
+    case "likes_desc": query += " ORDER BY likeCount DESC"
+    case "com_desc": query += " ORDER BY comCount DESC"
+    default: query += " ORDER BY p.id DESC"
+    }
+
+	rows, err := db.Query(query, args...)
+    if err != nil {
+        fmt.Println("Erreur SQL:", err)
+        return nil
+    }
+    defer rows.Close()
+
+    var posts []Post
+    for rows.Next() {
+        var p Post
+        rows.Scan(&p.ID, &p.Titre, &p.Contenu, &p.Categorie, &p.DatePublication, &p.UserID, &p.CountLikes, &p.CountCom)
+        posts = append(posts, p)
+    }
+    return posts
 }
