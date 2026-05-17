@@ -1056,10 +1056,10 @@ func API_SearchUsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	users, err := SearchUsersByName(query)
+	users, err := SearchUsersByName(query) 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "Erreur lors de la recherche en base de données"}`))
+		w.Write([]byte(`{"error": "Erreur lors de la recherche"}`))
 		return
 	}
 

@@ -4,12 +4,21 @@
 
     <div class="post-wrapper">
 
-        <div id="api-error-container" style="display: none; margin-bottom: 20px;">
-            <div class="flash-message error" style="display: flex; justify-content: space-between; align-items: center; background-color: #d9534f; color: white; padding: 15px; border-radius: 4px;">
-                <span id="api-error-text"></span>
-                <button onclick="document.getElementById('api-error-container').style.display='none'" style="background:none; border:none; color:inherit; cursor:pointer; font-weight:bold; font-size: 20px; line-height: 1;">&times;</button>
-            </div>
-        </div>
+        <div id="api-error-container" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 9999; max-width: 350px; animation: slideIn 0.3s ease-out;">
+    <div class="flash-message error" style="display: flex; justify-content: space-between; align-items: center; background-color: #d9534f; color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 14px; font-weight: 500; line-height: 1.4;">
+        <span id="api-error-text"></span>
+        <button onclick="document.getElementById('api-error-container').style.display='none'" style="background:none; border:none; color:inherit; cursor:pointer; font-weight:bold; font-size: 20px; margin-left: 15px; line-height: 1; padding: 0; opacity: 0.8; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">&times;</button>
+    </div>
+</div>
+
+<style>
+@keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
+
+
 
         <h1 class="post-title">{{.Post.Titre}}</h1>
 
@@ -138,11 +147,16 @@ function toggleLikeAPI(postId) {
     .then(async response => {
         const data = await response.json();
         
-        if (!response.ok || data.status === "error") {
-            document.getElementById('api-error-text').innerText = data.message || "Une erreur est survenue.";
-            document.getElementById('api-error-container').style.display = 'block';
-            return;
-        }
+       if (!response.ok || data.status === "error") {
+    document.getElementById('api-error-text').innerText = data.message || "Une erreur est survenue.";
+    const container = document.getElementById('api-error-container');
+    container.style.display = 'block';
+    
+    setTimeout(() => {
+        container.style.display = 'none';
+    }, 5000);
+    return;
+}
 
         if (data.status === "success") {
             document.getElementById('api-error-container').style.display = 'none';
