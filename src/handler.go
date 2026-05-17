@@ -122,7 +122,6 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 		})
 	}
 
-
 	if sort == "likes_desc" || sort == "likes_asc" {
 		postsAllInfos = trierPostsParLikes(postsAllInfos, sort)
 	} else if sort == "com_desc" || sort == "com_asc" {
@@ -130,7 +129,6 @@ func forumHandler(w http.ResponseWriter, r *http.Request, userInfos *UserInfos) 
 	} else if sort == "date_desc" || sort == "date_asc" {
 		postsAllInfos = trierPostsParDate(postsAllInfos, sort)
 	}
-
 
 	tmpl, _ := template.ParseFiles("pages/forum.html", "pages/header.html", "pages/footer.html")
 
@@ -555,11 +553,11 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 		pseudo, _ := GetPseudoByUserID(c.UserID)
 
 		comments = append(comments, ComNameAuthor{
-			ID:			c.ID,
-			Contenu: 	c.Contenu,
-			DateCom: 	c.DateCom,
-			Author: 	pseudo,
-			ParentID: 	c.ParentID,
+			ID:       c.ID,
+			Contenu:  c.Contenu,
+			DateCom:  c.DateCom,
+			Author:   pseudo,
+			ParentID: c.ParentID,
 		})
 	}
 
@@ -573,7 +571,7 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 		liked = HasLiked(userID, postID)
 	}
 
-	isAuthor := false 
+	isAuthor := false
 	if userID != 0 && post.UserID == userID {
 		isAuthor = true
 	}
@@ -581,38 +579,38 @@ func seeOnePost(w http.ResponseWriter, r *http.Request) {
 	tmpl, _ := template.ParseFiles("pages/post.html", "pages/header.html", "pages/footer.html")
 
 	data := struct {
-		Post      	Post
-		Comments  	[]ComNameAuthor
-		LikeCount 	int
-		ComCount  	int
-		Author		string
-		Liked		bool
-		IsAuthor	bool
+		Post      Post
+		Comments  []ComNameAuthor
+		LikeCount int
+		ComCount  int
+		Author    string
+		Liked     bool
+		IsAuthor  bool
 		*UserInfos
-		Page  		string
-		Query 		string
+		Page  string
+		Query string
 	}{
-		Post:      	post,
-		Comments:  	comments,
-		LikeCount: 	likeCount,
-		ComCount:  	comCount,
-		Author:    	authorPseudo,
-		Liked:     	liked,
-		IsAuthor:	isAuthor,
-		UserInfos: 	user,
-		Page:      	"post",
-		Query:     	"",
+		Post:      post,
+		Comments:  comments,
+		LikeCount: likeCount,
+		ComCount:  comCount,
+		Author:    authorPseudo,
+		Liked:     liked,
+		IsAuthor:  isAuthor,
+		UserInfos: user,
+		Page:      "post",
+		Query:     "",
 	}
 
 	tmpl.ExecuteTemplate(w, "post.html", data)
 }
 
 type ComNameAuthor struct {
-	ID			int
-	Contenu 	string
-	DateCom 	string
-	Author  	string
-	ParentID	int
+	ID       int
+	Contenu  string
+	DateCom  string
+	Author   string
+	ParentID int
 }
 
 type PostAllInfos struct {
@@ -639,13 +637,13 @@ func seeAllPosts(w http.ResponseWriter, r *http.Request) {
 	minC, _ := strconv.Atoi(r.URL.Query().Get("minC"))
 
 	categoryFilter := ""
-		if strings.HasPrefix(r.URL.Path, "/categories/") {
-			categoryFilter = strings.TrimPrefix(r.URL.Path, "/categories/")
-		} else {
-			categoryFilter = r.URL.Query().Get("cat")
+	if strings.HasPrefix(r.URL.Path, "/categories/") {
+		categoryFilter = strings.TrimPrefix(r.URL.Path, "/categories/")
+	} else {
+		categoryFilter = r.URL.Query().Get("cat")
 	}
-	
-    posts, err := GetAllPosts()
+
+	posts, err := GetAllPosts()
 	if err != nil {
 		fmt.Println("Erreur SQL posts:", err)
 		posts = []Post{}
@@ -670,7 +668,7 @@ func seeAllPosts(w http.ResponseWriter, r *http.Request) {
 		if p.CountLikes < minL {
 			continue
 		}
-		
+
 		postsInfos = append(postsInfos, PostAllInfos{
 			ID:              p.ID,
 			Titre:           p.Titre,
@@ -774,7 +772,6 @@ func comCreate(w http.ResponseWriter, r *http.Request) {
 		postID, _ := strconv.Atoi(r.FormValue("post_id"))
 		parentID, _ := strconv.Atoi(r.FormValue("parent_id"))
 		date := time.Now().Format("2006-01-02")
-		
 
 		userID := GetUserID(r)
 
@@ -853,6 +850,12 @@ func likePost(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserID(r)
 	postID, _ := strconv.Atoi(r.FormValue("post_id"))
 
+	if !userInfos.IsConnected {
+		SetFlash(w, "error", "Vous devez être connecté pour effectuer cette action.")
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		return
+	}
+
 	if HasLiked(userID, postID) {
 		UnlikePost(userID, postID)
 	} else {
@@ -865,6 +868,12 @@ func likePost(w http.ResponseWriter, r *http.Request) {
 func unLikePost(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserID(r)
 	postID, _ := strconv.Atoi(r.FormValue("post_id"))
+
+	if !userInfos.IsConnected {
+		SetFlash(w, "error", "Vous devez être connecté pour effectuer cette action.")
+		http.Redirect(w, r, "/post?id="+strconv.Itoa(postID), http.StatusSeeOther)
+		return
+	}
 
 	UnlikePost(userID, postID)
 
