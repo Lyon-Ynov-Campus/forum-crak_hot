@@ -5,7 +5,7 @@ First commit
 Note :
 
 - Suppression de tout lié au user au delete
-- Système mdp oublié déployé
+- Système mdp oublié déployé --> .env pour le mdp email ?
 - Retiré placeholder email ?
 
 Commit bisard en abc
