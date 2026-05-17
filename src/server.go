@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-const serverAddr = "127.0.0.1:8080"
+const serverAddr = ":80"
 
 type UserInfos struct {
 	Username              string
@@ -51,7 +51,6 @@ func StartServer() {
 	http.HandleFunc("/reseau", NetworkHandler)
 	http.HandleFunc("/coup-de-coeur", HeartHandler)
 
-	
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		loginHandler(w, r, &userInfos)
 	})
