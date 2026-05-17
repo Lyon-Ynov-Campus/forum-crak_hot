@@ -52,7 +52,9 @@ function performNetworkSearch() {
             return;
         }
 
-        users.forEach(user => {            
+        users.forEach(user => {
+            console.log("Objet utilisateur reçu de l'API Go :", user);
+
             let displayName = "Membre";
             let userId = null;
             let profilePic = '/static/pp/defaultPP.png';
@@ -64,7 +66,7 @@ function performNetworkSearch() {
                     if (user[key]) displayName = user[key];
                 }
                 
-                if (lowerKey === "id") {
+                if (lowerKey === "id" || lowerKey === "userid") {
                     userId = user[key];
                 }
 
@@ -73,8 +75,20 @@ function performNetworkSearch() {
                 }
             });
 
-            if (userId === null) userId = user.id || user.ID || 0;
-            
+            if (userId === null || userId === undefined || userId === 0) {
+                // On teste manuellement les structures Go les plus fréquentes :
+                userId = user.ID || user.id || user.Id || user.UserID || 0;
+                
+                if (userId === 0) {
+                    for (let key in user) {
+                        if (typeof user[key] === 'number' && user[key] > 0) {
+                            userId = user[key];
+                            break;
+                        }
+                    }
+                }
+            }
+
             resultsGrid.innerHTML += `
                 <div class="user-network-card" style="background: #111; border: 1px solid #222; border-radius: 8px; padding: 25px 15px; text-align: center;">
                     <img src="${profilePic}" style="width: 75px; height: 75px; object-fit: cover; border-radius: 50%; border: 2px solid #ff4500; margin-bottom: 15px; display: inline-block;">
