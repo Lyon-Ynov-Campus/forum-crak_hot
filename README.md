@@ -36,13 +36,27 @@ Pour tester ce projet, suivez les étapes suivantes :
 - Ne pas revenir en arrière avec les flèches de naviguations mais plutôt a l'aide des boutons(cela peut fausser les résultats ou le chargement de la page)
 - Si vous souhaiter quitter la page sans vous déconnecter, aller dans inspection, puis supprimez manuellement le user. A la suite de cela, effacer la base de donnée dans VSCode (elle se rechargera automatiquement avec le go run .)
  
+
+**ATTENTION LORS DES CORRECTIONS ET DU DÉPLOIEMENT :**
+
+- **Gestion des messages de confirmation ("Success") :** Lors de l'envoi de certaines requêtes (comme la publication d'un nouveau commentaire), le serveur renvoie un message brut de succès au format JSON indiquant que l'action a été correctement enregistrée en base de données
+- **Procédure obligatoire de rafraîchissement :** Dès que ce message de confirmation s'affiche sur fond noir, le correcteur ou l'utilisateur doit **obligatoirement effectuer un retour en arrière avec la flèche de navigation du navigateur, puis exécuter un `Ctrl + R` (ou `Ctrl + F5`)** pour actualiser le cache. Cette manipulation permet de recharger proprement le forum et de voir la publication (ou le commentaire) s'afficher directement à l'écran
+- **Réinitialisation de session (Debug) :** Si vous souhaitez forcer la déconnexion ou tester le comportement d'un nouvel utilisateur sans passer par le bouton de déconnexion, ouvrez l'inspecteur du navigateur (F12), allez dans l'onglet *Application/Stockage*, puis supprimez manuellement le cookie `session_token`. Vous pouvez ensuite nettoyer la base de données en supprimant le fichier SQLite dans VSCode (il se recréera automatiquement à blanc au prochain `go run .`)
+
 ## Guide d’utilisation du forum
  
 ### Recherche
 - Vous pouvez rechercher un post par titre via la barre de recherche.  
 La recherche fonctionne avec le tri et le filtre (date, likes, commentaires).
 - Vous pouvez rechercher un membre a l'aide de son pseudo dans la partie "Réseau".
- 
+
+### Espace Réseau (Fonctionnalité en cours d'unification)
+
+L'Espace Réseau a pour but de centraliser l'annuaire des membres de la communauté Crack'HOT
+
+ - **Ce que l'on peut faire :** Une barre de recherche asynchrone (API) permet de taper le pseudo d'un membre. Si le membre existe, une carte de profil générée dynamiquement en JavaScript apparaît à l'écran, affichant son pseudonyme et sa photo de profil (ou un avatar par défaut)
+ - **Ce qui ne fonctionne pas encore / Limitations :** Le bouton "Voir le profil" souffre actuellement d'un problème technique lors du transfert de l'identifiant numérique (`id`) entre le JavaScript et le serveur Go, générant parfois un ID égal à `0`. Par conséquent, cliquer sur ce bouton provoque une erreur 404 (page introuvable) ou redirige l'utilisateur en boucle vers la page d'accueil réseau. La page finale (`seeUser.html`), qui est censée lister l'historique complet des posts et des commentaires d'un autre utilisateur, est prête mais reste bloquée par ce bug de transmission
+
 ### Création de post
 Accessible uniquement si vous êtes connecté.
  
